@@ -851,6 +851,44 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
       <div class="img-prev" id="imgPrev">
         <img id="prevImg" alt="preview"/>
       </div>
+ <div class="divider" style="margin-top:1.25rem"></div>
+
+      <div style="margin-bottom:.75rem">
+        <div class="card-label" style="margin-bottom:.75rem">
+          <span class="step-num">2</span>
+          Real&#8209;world dimensions
+          <span style="font-family:'Instrument Sans',sans-serif;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink4);margin-left:.3rem">(optional)</span>
+        </div>
+        <div class="form-row" style="flex-wrap:wrap">
+          <div class="fg" style="min-width:80px;max-width:110px">
+            <label>Width</label>
+            <input id="objWidth" type="number" min="0" step="any" placeholder="e.g. 200"/>
+          </div>
+          <div class="fg" style="min-width:80px;max-width:110px">
+            <label>Height</label>
+            <input id="objHeight" type="number" min="0" step="any" placeholder="e.g. 85"/>
+          </div>
+          <div class="fg" style="min-width:80px;max-width:110px">
+            <label>Depth</label>
+            <input id="objDepth" type="number" min="0" step="any" placeholder="e.g. 90"/>
+          </div>
+          <div class="fg" style="min-width:72px;max-width:86px">
+            <label>Unit</label>
+            <select id="objUnit">
+              <option value="cm" selected>cm</option>
+              <option value="mm">mm</option>
+              <option value="m">m</option>
+              <option value="in">in</option>
+              <option value="ft">ft</option>
+            </select>
+          </div>
+        </div>
+        <p style="font-size:.72rem;color:var(--ink4);margin-top:.5rem;line-height:1.55">
+          Width (X) · Height (Y) · Depth (Z). Leave blank to keep Meshy's default scale.
+          Partial values are accepted — unspecified axes are scaled proportionally.
+        </p>
+      </div>
+
 
       <button class="btn btn-ink btn-lg" id="btnConvert" style="margin-top:1.1rem" disabled>
         <span>✦</span> Convert to 3D
@@ -859,11 +897,12 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
     </div>
 
     <div class="result-wrap card" id="resultWrap">
-      <div class="res-badge"><span class="pulse"></span>3D model ready</div>
+      <div class="res-badge"><span class="pulse"></span><span id="resultBadgeText">3D model ready</span></div>
+      <div id="scaleInfoBadge" style="display:none;margin-bottom:.85rem;padding:.55rem .85rem;background:var(--neo-light);border:1px solid var(--neo-border);border-radius:var(--r);font-size:.78rem;color:var(--neo);font-family:'JetBrains Mono',monospace;line-height:1.6"></div>
       <div class="model-wrap">
         <model-viewer id="upMV" auto-rotate camera-controls shadow-intensity="1" exposure="1.1"></model-viewer>
       </div>
-      <div id="dlRow"></div>
+      <div id="dlRow" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem"></div>
     </div>
   </div>
 
@@ -1359,32 +1398,113 @@ dropZone.addEventListener('drop',e=>{
 });
 fileIn.addEventListener('change',function(){if(this.files[0])showPreview(this.files[0])});
 
+function getDimInputs(){
+  return {
+    w: document.getElementById('objWidth').value.trim(),
+    h: document.getElementById('objHeight').value.trim(),
+    d: document.getElementById('objDepth').value.trim(),
+    unit: document.getElementById('objUnit').value,
+  };
+}
+
+function updateConvertLabel(){
+  const {w,h,d,unit}=getDimInputs();
+  if(w||h||d){
+    const parts=[w||'?',h||'?',d||'?'].join(' × ');
+    btnConvertLabel.textContent=`Convert & Scale to ${parts} ${unit}`;
+  }else{
+    btnConvertLabel.textContent='Convert to 3D';
+  }
+}
+
+['objWidth','objHeight','objDepth','objUnit'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',updateConvertLabel);
+  document.getElementById(id).addEventListener('change',updateConvertLabel);
+});
+
 function showPreview(f){
   prevImg.src=URL.createObjectURL(f);
   imgPrev.classList.add('on');
   btnConvert.disabled=false;
+  updateConvertLabel();
 }
 
 btnConvert.addEventListener('click', async()=>{
   const f=fileIn.files[0];
   if(!f)return;
   resultWrap.classList.remove('on');
+  document.getElementById('scaleInfoBadge').style.display='none';
   btnConvert.disabled=true;
-  loading('upStatus','Uploading & generating 3D model via Meshy AI… (1–2 min)');
+ 
+  const {w,h,d,unit}=getDimInputs();
+  const hasDims=!!(w||h||d);
+
+  loading('upStatus', hasDims
+    ? 'Uploading, generating 3D model, then rescaling… (1–2 min)'
+    : 'Uploading & generating 3D model via Meshy AI… (1–2 min)');
 
   const fd=new FormData();
   fd.append('image',f);
+  if(w)fd.append('obj_width',w);
+  if(h)fd.append('obj_height',h);
+  if(d)fd.append('obj_depth',d);
+  fd.append('obj_unit',unit);
+
+
+ 
   try{
     const r=await fetch('/generate-3d',{method:'POST',body:fd});
-    const d=await r.json().catch(()=>({}));
-    if(r.ok&&d.model_url){
-      ok('upStatus','3D model generated successfully');
-      document.getElementById('upMV').setAttribute('src','/proxy-glb?url='+encodeURIComponent(d.model_url));
-      document.getElementById('dlRow').innerHTML=
-        `<a class="dl-btn" href="${esc(d.model_url)}" target="_blank" download>↓ Download GLB</a>`;
+    const resp=await r.json().catch(()=>({}));
+    if(r.ok&&(resp.model_url||resp.scaled_model_url)){
+      const isScaled=!!resp.scaled_model_url&&!(resp.scale_info&&resp.scale_info.error);
+      const viewUrl=isScaled?resp.scaled_model_url:('/proxy-glb?url='+encodeURIComponent(resp.model_url));
+
+      // Status message
+      if(isScaled){
+        ok('upStatus','3D model generated and rescaled successfully');
+        document.getElementById('resultBadgeText').textContent='3D model ready · rescaled';
+      }else{
+        ok('upStatus','3D model generated successfully');
+        document.getElementById('resultBadgeText').textContent='3D model ready';
+      }
+
+      // Scale info badge
+      const badge=document.getElementById('scaleInfoBadge');
+      if(isScaled&&resp.scale_info){
+        const si=resp.scale_info;
+        const u=si.unit||unit;
+        const orig=si.original;
+        const scl=si.scaled;
+        badge.innerHTML=
+          `<strong>Rescaled</strong> &nbsp;→&nbsp; ${scl.w} × ${scl.h} × ${scl.d} ${u}&nbsp; (W × H × D)`+
+          `<br><span style="opacity:.7;font-size:.68rem">Original model was ${orig.w} × ${orig.h} × ${orig.d} ${u} in model units</span>`;
+        badge.style.display='block';
+      }else if(hasDims&&resp.scale_info&&resp.scale_info.error){
+        badge.style.background='var(--red-light)';
+        badge.style.borderColor='var(--red-border)';
+        badge.style.color='var(--red)';
+        badge.innerHTML=`⚠ Scaling failed: ${esc(resp.scale_info.error)} — showing original model`;
+        badge.style.display='block';
+      }
+
+      // Viewer
+      document.getElementById('upMV').setAttribute('src', viewUrl);
+
+      // Download buttons
+      const dlRow=document.getElementById('dlRow');
+      if(isScaled){
+        dlRow.innerHTML=
+          `<a class="dl-btn" href="${esc(resp.scaled_model_url)}" download>↓ Download Scaled GLB</a>`+
+          `<a class="dl-btn" style="background:var(--bg);border-color:var(--border);color:var(--ink3)" `+
+          `href="${esc(resp.model_url)}" target="_blank">↓ Original GLB</a>`;
+      }else{
+        dlRow.innerHTML=
+          `<a class="dl-btn" href="${esc(resp.model_url)}" target="_blank" download>↓ Download GLB</a>`;
+      }
+
       resultWrap.classList.add('on');
     }else{
-      err('upStatus',d.error||d.message||'Generation failed');
+      err('upStatus',resp.error||resp.message||'Generation failed');
     }
   }catch(e){
     err('upStatus','Connection error — is the server running on port 5000?');

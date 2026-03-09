@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from config import ROOT, DATA_DIR, DIR_2D, MESHY_API_KEY, MESHY_BASE
+from config import ROOT, DATA_DIR, DIR_2D, DIR_3D, MESHY_API_KEY, MESHY_BASE
 from catalog_db import init_db, list_items, get_item_by_asin, upsert_item
 
 app = Flask(__name__, static_folder=None)
@@ -80,6 +80,13 @@ def generate_3d():
     if not image:
         return jsonify({"error": "No image provided"}), 400
 
+    # Optional real-world dimensions for post-generation rescaling
+    obj_width = request.form.get("obj_width", "").strip() or None
+    obj_height = request.form.get("obj_height", "").strip() or None
+    obj_depth = request.form.get("obj_depth", "").strip() or None
+    obj_unit = request.form.get("obj_unit", "cm").strip() or "cm"
+    has_dims = any([obj_width, obj_height, obj_depth])
+
     raw  = image.read()
     b64  = base64.b64encode(raw).decode("utf-8")
     mime = image.content_type or "image/jpeg"
@@ -124,7 +131,14 @@ def generate_3d():
                     time.sleep(2)
                 continue
         else:
-            return jsonify({"error": "Connection to 3D service was reset. Please try again in a moment."}), 502
+            return (
+                jsonify(
+                    {
+                        "error": "Connection to 3D service was reset. Please try again in a moment."
+                    }
+                ),
+                502,
+            )
 
         try:
             status_data = status_response.json()
@@ -137,15 +151,49 @@ def generate_3d():
         if status == "SUCCEEDED":
             model_urls = task.get("model_urls") or {}
             model_url  = model_urls.get("glb")
-            if model_url:
-                return jsonify({
-                    "model_url":               model_url,
-                    "task":                    task,
-                    "status_data":             status_data,
-                    "status_response_headers": dict(status_response.headers),
-                })
-            return jsonify({"error": "No model URL in response", "task": task, "status_data": status_data}), 500
+            if not model_url:
+                return jsonify({"error": "No model URL in response", "task": task, "status_data": status_data}), 500
 
+            scaled_model_url = None
+            scale_info       = None
+
+            if has_dims:
+                try:
+                    from model_scaler import scale_model
+                    glb_id      = uuid.uuid4().hex[:12]
+                    orig_path   = Path(str(DIR_3D)) / f"upload_{glb_id}_orig.glb"
+                    scaled_path = Path(str(DIR_3D)) / f"upload_{glb_id}_scaled.glb"
+
+                    glb_r = requests.get(model_url, timeout=60)
+                    glb_r.raise_for_status()
+                    orig_path.parent.mkdir(parents=True, exist_ok=True)
+                    orig_path.write_bytes(glb_r.content)
+
+                    scale_info = scale_model(
+                        str(orig_path),
+                        str(scaled_path),
+                        width  = float(obj_width)  if obj_width  else None,
+                        height = float(obj_height) if obj_height else None,
+                        depth  = float(obj_depth)  if obj_depth  else None,
+                        unit   = obj_unit,
+                    )
+
+                    try:
+                        rel = scaled_path.resolve().relative_to(Path(str(DATA_DIR)).resolve())
+                        scaled_model_url = "/api/files/" + str(rel).replace("\\", "/")
+                    except ValueError:
+                        pass
+                except Exception as exc:
+                    scale_info = {"error": str(exc)}
+
+            return jsonify({
+                "model_url":               model_url,
+                "scaled_model_url":        scaled_model_url,
+                "scale_info":              scale_info,
+                "task":                    task,
+                "status_data":             status_data,
+                "status_response_headers": dict(status_response.headers),
+            })
         if status == "FAILED":
             err = (task.get("task_error") or {}).get("message", "Generation failed")
             return jsonify({
