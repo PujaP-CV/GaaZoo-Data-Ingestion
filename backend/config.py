@@ -26,12 +26,26 @@ DIR_3D_SCALED.mkdir(parents=True, exist_ok=True)
 DIR_TEMP.mkdir(parents=True, exist_ok=True)
 
 
-# ── Flask ──────────────────────────────────────────────────────────────
+# ── App config ─────────────────────────────────────────────────────────
 class Config:
-    SECRET_KEY       = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
-    DEBUG            = os.getenv("DEBUG", "True") == "True"
-    SESSION_TYPE     = "filesystem"
-    SESSION_FILE_DIR = str(BACKEND / "sessions")
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
+    DEBUG      = os.getenv("DEBUG", "True") == "True"
+
+    # ── Frontend URL ───────────────────────────────────────────────────
+    # Where your frontend is hosted. Used in OAuth callback redirects.
+    # Local dev  : http://localhost:3000  (python -m http.server 3000)
+    # AWS S3     : http://gazoo-fe.s3-website-ap-southeast-2.amazonaws.com
+    # Production : https://www.yourdomain.com
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+
+    # ── Session cookies ────────────────────────────────────────────────
+    # When frontend (S3/port 3000) and backend (port 8000) are on different
+    # origins, browsers require SameSite=None + Secure (HTTPS) for cookies.
+    # Set HTTPS=True in .env once you have SSL on the backend.
+    _https = os.getenv("HTTPS", "False") == "True"
+    SESSION_SAME_SITE = "none" if _https else "lax"
+    SESSION_HTTPS_ONLY = _https
+    SESSION_MAX_AGE   = 86400 * 30   # 30 days
 
     # ── Meshy AI (image → 3D) ──────────────────────────────────────────
     MESHY_API_KEY = os.getenv("MESHY_API_KEY", "").strip()
@@ -57,9 +71,14 @@ class Config:
     DEFAULT_VENDOR_DOMAIN = os.getenv("DEFAULT_VENDOR_DOMAIN", "amazon.com").strip()
 
     # ── Pinterest OAuth ────────────────────────────────────────────────
+    # Pinterest only accepts 'localhost' redirects (not 127.0.0.1).
+    # PINTEREST_FRONTEND_URL is where the backend redirects the browser
+    # after a successful/failed Pinterest OAuth — must match the hostname
+    # the user opened the frontend on (localhost:3000).
     PINTEREST_APP_ID       = os.getenv("PINTEREST_APP_ID",     "")
     PINTEREST_APP_SECRET   = os.getenv("PINTEREST_APP_SECRET", "")
-    PINTEREST_REDIRECT_URI = os.getenv("PINTEREST_REDIRECT_URI", "http://localhost:5000/auth/pinterest/callback")
+    PINTEREST_REDIRECT_URI = os.getenv("PINTEREST_REDIRECT_URI", "http://localhost:8000/auth/pinterest/callback")
+    PINTEREST_FRONTEND_URL = os.getenv("PINTEREST_FRONTEND_URL", "http://localhost:3000").rstrip("/")
     PINTEREST_SCOPE        = "boards:read,pins:read,user_accounts:read"
     PINTEREST_AUTH_URL     = "https://www.pinterest.com/oauth/"
     PINTEREST_TOKEN_URL    = "https://api.pinterest.com/v5/oauth/token"
@@ -68,7 +87,7 @@ class Config:
     # ── Spotify OAuth ──────────────────────────────────────────────────
     SPOTIFY_CLIENT_ID     = os.getenv("SPOTIFY_CLIENT_ID",     "")
     SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET", "")
-    SPOTIFY_REDIRECT_URI  = os.getenv("SPOTIFY_REDIRECT_URI",  "http://localhost:5000/auth/spotify/callback")
+    SPOTIFY_REDIRECT_URI  = os.getenv("SPOTIFY_REDIRECT_URI",  "http://localhost:8000/auth/spotify/callback")
     SPOTIFY_SCOPE         = "user-read-email user-read-private playlist-read-private playlist-read-collaborative"
     SPOTIFY_AUTH_URL      = "https://accounts.spotify.com/authorize"
     SPOTIFY_TOKEN_URL     = "https://accounts.spotify.com/api/token"

@@ -7,10 +7,15 @@ Handles all Pinterest OAuth 2.0 flow:
   - Refresh expired tokens
 """
 
-import secrets
-import requests
 import base64
-from flask import current_app
+import logging
+import secrets
+
+import requests
+
+from config import Config
+
+logger = logging.getLogger(__name__)
 
 
 def build_auth_url(state: str = None) -> tuple[str, str]:
@@ -23,19 +28,19 @@ def build_auth_url(state: str = None) -> tuple[str, str]:
     if state is None:
         state = secrets.token_urlsafe(32)
 
-    cfg = current_app.config
+    cfg = Config()
 
     params = {
-        "client_id":     cfg["PINTEREST_APP_ID"],
-        "redirect_uri":  cfg["PINTEREST_REDIRECT_URI"],
+        "client_id":     cfg.PINTEREST_APP_ID,
+        "redirect_uri":  cfg.PINTEREST_REDIRECT_URI,
         "response_type": "code",
-        "scope":         cfg["PINTEREST_SCOPE"],
+        "scope":         cfg.PINTEREST_SCOPE,
         "state":         state,
     }
 
     # Build query string manually for clarity
     query = "&".join(f"{k}={v}" for k, v in params.items())
-    auth_url = f"{cfg['PINTEREST_AUTH_URL']}?{query}"
+    auth_url = f"{cfg.PINTEREST_AUTH_URL}?{query}"
 
     return auth_url, state
 
@@ -53,10 +58,10 @@ def exchange_code_for_token(code: str) -> dict:
     Raises:
         Exception if the exchange fails.
     """
-    cfg = current_app.config
+    cfg = Config()
 
     # Pinterest requires Basic Auth with app credentials
-    credentials = f"{cfg['PINTEREST_APP_ID']}:{cfg['PINTEREST_APP_SECRET']}"
+    credentials = f"{cfg.PINTEREST_APP_ID}:{cfg.PINTEREST_APP_SECRET}"
     encoded     = base64.b64encode(credentials.encode()).decode()
 
     headers = {
@@ -67,11 +72,11 @@ def exchange_code_for_token(code: str) -> dict:
     payload = {
         "grant_type":   "authorization_code",
         "code":         code,
-        "redirect_uri": cfg["PINTEREST_REDIRECT_URI"],
+        "redirect_uri": cfg.PINTEREST_REDIRECT_URI,
     }
 
     response = requests.post(
-        cfg["PINTEREST_TOKEN_URL"],
+        cfg.PINTEREST_TOKEN_URL,
         headers=headers,
         data=payload,
         timeout=10
@@ -95,9 +100,9 @@ def refresh_access_token(refresh_token: str) -> dict:
     Returns:
         New token dict.
     """
-    cfg = current_app.config
+    cfg = Config()
 
-    credentials = f"{cfg['PINTEREST_APP_ID']}:{cfg['PINTEREST_APP_SECRET']}"
+    credentials = f"{cfg.PINTEREST_APP_ID}:{cfg.PINTEREST_APP_SECRET}"
     encoded     = base64.b64encode(credentials.encode()).decode()
 
     headers = {
@@ -111,7 +116,7 @@ def refresh_access_token(refresh_token: str) -> dict:
     }
 
     response = requests.post(
-        cfg["PINTEREST_TOKEN_URL"],
+        cfg.PINTEREST_TOKEN_URL,
         headers=headers,
         data=payload,
         timeout=10

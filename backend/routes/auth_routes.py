@@ -9,151 +9,183 @@ Spotify:
   GET  /auth/spotify/login      — OAuth flow
   GET  /auth/spotify/callback   — OAuth callback
   GET  /auth/status             — connection status (pinterest + spotify)
-  POST /auth/logout             — disconnect
+  POST /auth/logout             — disconnect all
+  POST /auth/spotify/disconnect — disconnect Spotify only
 """
 
-from flask import Blueprint, redirect, request, session, jsonify, current_app
+import logging
+
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse, RedirectResponse
+
 from modules.pinterest_auth import build_auth_url, exchange_code_for_token
 from modules.pinterest_fetcher import get_user_profile, PinterestAuthError
-from modules.spotify_auth import build_auth_url as spotify_build_auth_url
-from modules.spotify_auth import exchange_code_for_token as spotify_exchange_code
+from modules.spotify_auth import (
+    build_auth_url as spotify_build_auth_url,
+    exchange_code_for_token as spotify_exchange_code,
+)
 
-auth_bp = Blueprint("auth", __name__)
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+def _fe(path: str, pinterest: bool = False) -> str:
+    """
+    Build a redirect URL pointing to the frontend.
+    - Spotify/default  : uses FRONTEND_URL        (127.0.0.1:3000)
+    - Pinterest        : uses PINTEREST_FRONTEND_URL (localhost:3000)
+      Pinterest only accepts localhost redirect URIs, so its post-auth
+      redirect must also land on localhost to match the session cookie.
+    """
+    from config import Config
+    base = (Config.PINTEREST_FRONTEND_URL if pinterest else Config.FRONTEND_URL).rstrip("/")
+    return f"{base}/{path.lstrip('/')}"
 
 
 # ── Direct token ─────────────────────────────────────────────────────────────
-@auth_bp.route("/pinterest/token", methods=["POST"])
-def pinterest_direct_token():
-    body  = request.get_json(silent=True) or {}
-    token = body.get("access_token", "").strip()
+
+@router.post("/pinterest/token")
+async def pinterest_direct_token(request: Request):
+    body  = await request.json()
+    token = (body.get("access_token") or "").strip()
     if not token:
-        return jsonify({"error": "access_token is required"}), 400
+        return JSONResponse({"error": "access_token is required"}, status_code=400)
 
     try:
         user_info = get_user_profile(token)
     except PinterestAuthError as e:
-        return jsonify({
+        return JSONResponse({
             "error": str(e),
-            "hint": "The generated token needs all 3 scopes: boards:read, pins:read, user_accounts:read. "
-                    "On the app dashboard, make sure to select all scopes before clicking Generate token."
-        }), 401
+            "hint": (
+                "The generated token needs all 3 scopes: boards:read, pins:read, "
+                "user_accounts:read. On the app dashboard, select all scopes before "
+                "clicking Generate token."
+            ),
+        }, status_code=401)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
-    session["pinterest_access_token"]  = token
-    session["pinterest_refresh_token"] = None
-    session["pinterest_connected"]     = True
-    session["pinterest_mode"]          = "direct_token"
-    session["pinterest_user"]          = user_info
-    session.permanent = True
+    request.session["pinterest_access_token"]  = token
+    request.session["pinterest_refresh_token"] = None
+    request.session["pinterest_connected"]     = True
+    request.session["pinterest_mode"]          = "direct_token"
+    request.session["pinterest_user"]          = user_info
 
-    current_app.logger.info(f"Direct token connected: @{user_info.get('username')}")
-    return jsonify({"success": True, "mode": "direct_token", "username": user_info.get("username"), "message": f"Connected as @{user_info.get('username')}"})
+    logger.info(f"Direct token connected: @{user_info.get('username')}")
+    return {
+        "success":  True,
+        "mode":     "direct_token",
+        "username": user_info.get("username"),
+        "message":  f"Connected as @{user_info.get('username')}",
+    }
 
 
-# ── OAuth login ───────────────────────────────────────────────────────────────
-@auth_bp.route("/pinterest/login")
-def pinterest_login():
+# ── Pinterest OAuth ───────────────────────────────────────────────────────────
+
+@router.get("/pinterest/login")
+async def pinterest_login(request: Request):
     auth_url, state = build_auth_url()
-    session["pinterest_oauth_state"] = state
-    return redirect(auth_url)
+    request.session["pinterest_oauth_state"] = state
+    return RedirectResponse(url=auth_url, status_code=302)
 
 
-@auth_bp.route("/pinterest/callback")
-def pinterest_callback():
-    if request.args.get("state", "") != session.get("pinterest_oauth_state", ""):
-        return redirect("/?error=pinterest_state_mismatch")
+@router.get("/pinterest/callback")
+async def pinterest_callback(request: Request):
+    params = request.query_params
 
-    error = request.args.get("error")
+    if params.get("state", "") != request.session.get("pinterest_oauth_state", ""):
+        return RedirectResponse(url=_fe("?error=pinterest_state_mismatch", pinterest=True), status_code=302)
+
+    error = params.get("error")
     if error:
-        return redirect(f"/?error={request.args.get('error_description', error)}")
+        return RedirectResponse(url=_fe(f"?error={params.get('error_description', error)}", pinterest=True), status_code=302)
 
-    code = request.args.get("code")
+    code = params.get("code")
     if not code:
-        return redirect("/?error=no_code")
+        return RedirectResponse(url=_fe("?error=no_code", pinterest=True), status_code=302)
 
     try:
         token_data = exchange_code_for_token(code)
     except Exception as e:
-        current_app.logger.error(f"Token exchange failed: {e}")
-        return redirect("/?error=token_exchange_failed")
+        logger.error(f"Pinterest token exchange failed: {e}")
+        return RedirectResponse(url=_fe("?error=token_exchange_failed", pinterest=True), status_code=302)
 
-    session["pinterest_access_token"]  = token_data.get("access_token")
-    session["pinterest_refresh_token"] = token_data.get("refresh_token")
-    session["pinterest_connected"]     = True
-    session["pinterest_mode"]          = "oauth"
-    session.permanent = True
+    request.session["pinterest_access_token"]  = token_data.get("access_token")
+    request.session["pinterest_refresh_token"] = token_data.get("refresh_token")
+    request.session["pinterest_connected"]     = True
+    request.session["pinterest_mode"]          = "oauth"
 
-    current_app.logger.info("OAuth connected successfully")
-    return redirect("/?pinterest_connected=true")
+    logger.info("Pinterest OAuth connected successfully")
+    return RedirectResponse(url=_fe("?pinterest_connected=true", pinterest=True), status_code=302)
 
 
 # ── Spotify OAuth ─────────────────────────────────────────────────────────────
-@auth_bp.route("/spotify/login")
-def spotify_login():
+
+@router.get("/spotify/login")
+async def spotify_login(request: Request):
     auth_url, state = spotify_build_auth_url()
-    session["spotify_oauth_state"] = state
-    return redirect(auth_url)
+    request.session["spotify_oauth_state"] = state
+    return RedirectResponse(url=auth_url, status_code=302)
 
 
-def _frontend_redirect(path_query: str):
-    """Redirect back to the frontend on the same host/port as this Flask server."""
-    return redirect(f"/{path_query.lstrip('/')}")
+@router.get("/spotify/callback")
+async def spotify_callback(request: Request):
+    params = request.query_params
 
+    if params.get("state", "") != request.session.get("spotify_oauth_state", ""):
+        return RedirectResponse(url=_fe("?error=spotify_state_mismatch"), status_code=302)
 
-@auth_bp.route("/spotify/callback")
-def spotify_callback():
-    saved_state = session.get("spotify_oauth_state", "")
-    if request.args.get("state", "") != saved_state:
-        # Usually: user opened app at localhost but Spotify redirect URI is 127.0.0.1 (or vice versa)
-        return _frontend_redirect("?error=spotify_state_mismatch")
-
-    error = request.args.get("error")
+    error = params.get("error")
     if error:
-        return _frontend_redirect(f"?error={request.args.get('error_description', error)}")
+        return RedirectResponse(url=_fe(f"?error={params.get('error_description', error)}"), status_code=302)
 
-    code = request.args.get("code")
+    code = params.get("code")
     if not code:
-        return _frontend_redirect("?error=no_code")
+        return RedirectResponse(url=_fe("?error=no_code"), status_code=302)
 
     try:
         token_data = spotify_exchange_code(code)
     except Exception as e:
-        current_app.logger.error(f"Spotify token exchange failed: {e}")
-        return _frontend_redirect("?error=spotify_token_exchange_failed")
+        logger.error(f"Spotify token exchange failed: {e}")
+        return RedirectResponse(url=_fe("?error=spotify_token_exchange_failed"), status_code=302)
 
-    session["spotify_access_token"] = token_data.get("access_token")
-    session["spotify_refresh_token"] = token_data.get("refresh_token")
-    session["spotify_connected"] = True
-    session.permanent = True
+    request.session["spotify_access_token"]  = token_data.get("access_token")
+    request.session["spotify_refresh_token"] = token_data.get("refresh_token")
+    request.session["spotify_connected"]     = True
 
-    current_app.logger.info("Spotify connected successfully")
-    return _frontend_redirect("?spotify_connected=true")
+    logger.info("Spotify OAuth connected successfully")
+    return RedirectResponse(url=_fe("?spotify_connected=true"), status_code=302)
 
 
 # ── Status / logout ───────────────────────────────────────────────────────────
-@auth_bp.route("/status")
-def auth_status():
-    connected = session.get("pinterest_connected", False) and bool(session.get("pinterest_access_token"))
-    user      = session.get("pinterest_user", {})
-    spotify_connected = session.get("spotify_connected", False) and bool(session.get("spotify_access_token"))
-    return jsonify({
-        "pinterest_connected": connected,
-        "mode":     session.get("pinterest_mode", ""),
-        "username": user.get("username", "") if isinstance(user, dict) else "",
-        "spotify_connected": spotify_connected,
-    })
+
+@router.get("/status")
+async def auth_status(request: Request):
+    pinterest_connected = (
+        request.session.get("pinterest_connected", False)
+        and bool(request.session.get("pinterest_access_token"))
+    )
+    user = request.session.get("pinterest_user", {})
+    spotify_connected = (
+        request.session.get("spotify_connected", False)
+        and bool(request.session.get("spotify_access_token"))
+    )
+    return {
+        "pinterest_connected": pinterest_connected,
+        "mode":                request.session.get("pinterest_mode", ""),
+        "username":            user.get("username", "") if isinstance(user, dict) else "",
+        "spotify_connected":   spotify_connected,
+    }
 
 
-@auth_bp.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"message": "Disconnected"})
+@router.post("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return {"message": "Disconnected"}
 
 
-@auth_bp.route("/spotify/disconnect", methods=["POST"])
-def spotify_disconnect():
-    session.pop("spotify_access_token", None)
-    session.pop("spotify_refresh_token", None)
-    session.pop("spotify_connected", None)
-    return jsonify({"message": "Spotify disconnected"})
+@router.post("/spotify/disconnect")
+async def spotify_disconnect(request: Request):
+    for key in ("spotify_access_token", "spotify_refresh_token", "spotify_connected"):
+        request.session.pop(key, None)
+    return {"message": "Spotify disconnected"}

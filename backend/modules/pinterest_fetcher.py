@@ -4,8 +4,13 @@ modules/pinterest_fetcher.py
 Fetches boards and pins from Pinterest API v5.
 """
 
+import logging
+
 import requests
-from flask import current_app
+
+from config import Config
+
+logger = logging.getLogger(__name__)
 
 
 class PinterestAuthError(Exception):
@@ -18,7 +23,7 @@ class PinterestPermissionError(Exception):
 
 
 def _get(endpoint: str, access_token: str, params: dict = None) -> dict:
-    base    = current_app.config["PINTEREST_API_BASE"]
+    base    = Config().PINTEREST_API_BASE
     url     = f"{base}{endpoint}"
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
 
@@ -29,7 +34,7 @@ def _get(endpoint: str, access_token: str, params: dict = None) -> dict:
     except requests.exceptions.Timeout:
         raise Exception("Pinterest API timed out.")
 
-    current_app.logger.info(f"Pinterest {endpoint} -> {r.status_code}: {r.text[:200]}")
+    logger.info(f"Pinterest {endpoint} -> {r.status_code}: {r.text[:200]}")
 
     if r.status_code == 200:
         data = r.json()

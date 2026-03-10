@@ -27,10 +27,15 @@ DPP profile routes:
 
 import base64
 import json as _json
+import logging
 import os
+from typing import List, Optional
 
 import requests
-from flask import Blueprint, current_app, jsonify, request, session
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
+
+from config import Config
 from modules.dpp_builder import build_dpp_from_images, build_dpp_from_pinterest
 from modules.gemini_ai import (
     analyse_single_image_vanilla,
@@ -42,6 +47,7 @@ from modules.gemini_ai import (
     spotify_mood_vector,
     spotify_question_from_signals,
 )
+from modules.image_analyser import ImageData, analyse_images as _analyse_images
 from modules.spotify_auth import get_valid_spotify_token
 from modules.spotify_api import (
     build_user_summary_from_live,
@@ -55,7 +61,8 @@ from modules.pinterest_fetcher import (
     get_user_profile,
 )
 
-profile_bp = Blueprint("profile", __name__)
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_IMAGES = 10
@@ -64,30 +71,30 @@ MAX_MB = 5
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
 
-def _validate_images(files: list) -> tuple:
-    """Return (valid_files, skipped_messages) from a werkzeug file list."""
+async def _read_and_validate(files: List[UploadFile]) -> tuple:
+    """Read UploadFile bytes and validate type/size. Returns (List[ImageData], skipped_msgs)."""
     valid, skipped = [], []
     for f in files[:MAX_IMAGES]:
-        if f.content_type not in ALLOWED_TYPES:
+        ct = f.content_type or ""
+        if ct not in ALLOWED_TYPES:
             skipped.append(f"{f.filename}: unsupported type")
             continue
-        f.seek(0, 2)
-        size_mb = f.tell() / (1024 * 1024)
-        f.seek(0)
+        content = await f.read()
+        size_mb = len(content) / (1024 * 1024)
         if size_mb > MAX_MB:
             skipped.append(f"{f.filename}: too large ({size_mb:.1f} MB)")
             continue
-        valid.append(f)
+        valid.append(ImageData(filename=f.filename, content=content, content_type=ct))
     return valid, skipped
 
 
-def _enrich_and_store(dpp: dict) -> dict:
-    """Run AI enrichment on a raw DPP, store in session, return enriched DPP."""
-    current_app.logger.info("Running AI enrichment on DPP...")
+def _enrich_and_store(dpp: dict, session: dict) -> dict:
+    """Run AI enrichment on a raw DPP, store in session dict, return enriched DPP."""
+    logger.info("Running AI enrichment on DPP...")
     try:
         dpp = enrich_dpp_with_ai(dpp)
     except Exception as e:
-        current_app.logger.warning(f"AI enrichment skipped: {e}")
+        logger.warning(f"AI enrichment skipped: {e}")
     try:
         safe = dict(dpp)
         if isinstance(safe.get("board_summary"), list):
@@ -151,11 +158,9 @@ def _aggregate_image_signals(analyses: list) -> dict:
 def _download_board_images(selected_boards: list, max_per_board: int = 4) -> tuple:
     """
     Download up to max_per_board pin images from each selected board.
-    Returns (image_tuples, preview_list).
-      image_tuples: [(filename, bytes, mimetype, pin_url), ...]
-      preview_list: [{"name": fname, "image_url": url}, ...]
+    Returns (List[ImageData], preview_list).
     """
-    image_tuples, preview_list = [], []
+    image_data_list, preview_list = [], []
     for b in selected_boards:
         count = 0
         for p in b.get("pins", [])[:12]:
@@ -170,415 +175,349 @@ def _download_board_images(selected_boards: list, max_per_board: int = 4) -> tup
                     continue
                 content = r.content
                 if len(content) > MAX_MB * 1024 * 1024:
-                    current_app.logger.debug(f"Skipping large pin image {url}")
+                    logger.debug(f"Skipping large pin image {url}")
                     continue
-                fname = (
-                    url.split("?")[0].rstrip("/").split("/")[-1]
-                    or f"pin_{p.get('id')}.jpg"
-                )
+                fname = url.split("?")[0].rstrip("/").split("/")[-1] or f"pin_{p.get('id')}.jpg"
                 mtype = r.headers.get("content-type", "image/jpeg")
-                image_tuples.append((fname, content, mtype, url))
+                image_data_list.append(ImageData(filename=fname, content=content, content_type=mtype))
                 preview_list.append({"name": fname, "image_url": url})
                 count += 1
             except Exception as e:
-                current_app.logger.debug(f"Failed to download pin image {url}: {e}")
-    return image_tuples, preview_list
+                logger.debug(f"Failed to download pin image {url}: {e}")
+    return image_data_list, preview_list
 
 
 # ── POST /profile/analyse/images ──────────────────────────────────────────────
 
-@profile_bp.route("/analyse/images", methods=["POST"])
-def analyse_images_for_questions():
-    """
-    Step 1 of 2 — image upload flow.
+@router.post("/analyse/images")
+async def analyse_images_for_questions(
+    request: Request,
+    images: List[UploadFile] = File(...),
+):
+    """Step 1 of 2 — image upload flow. Runs Template 19/20 per image."""
+    if not images or all(f.filename == "" for f in images):
+        return JSONResponse({"error": "Please upload at least one image."}, status_code=400)
 
-    Runs Template 19 or 20 on each uploaded image.
-    Returns per-image analysis + AI question + 4 options. No DPP built yet.
-
-    Returns:
-        { "success": true, "analyses": [{filename, image_url, question, options,
-          dimension, styles, dominant_colours, ...}], "template_used": 19 }
-    """
-    files = request.files.getlist("images")
-    if not files or all(f.filename == "" for f in files):
-        return jsonify({"error": "Please upload at least one image."}), 400
-
-    valid, skipped = _validate_images(files)
+    valid, skipped = await _read_and_validate(images)
     if not valid:
-        return jsonify({"error": "No valid images.", "skipped": skipped}), 400
+        return JSONResponse({"error": "No valid images.", "skipped": skipped}, status_code=400)
 
-    template_id = current_app.config.get("IMAGE_QUESTION_TEMPLATE_ID", 19)
-    current_app.logger.info(
-        f"Analysing {len(valid)} images with Template {template_id} (question mode)..."
-    )
+    template_id = Config.IMAGE_QUESTION_TEMPLATE_ID
+    logger.info(f"Analysing {len(valid)} images with Template {template_id} (question mode)...")
 
     analyses = []
-    for f in valid:
-        img_bytes = f.read()
-        f.seek(0)
+    for img in valid:
         result = analyse_single_image_with_questions(
-            f.filename, img_bytes, f.content_type or "image/jpeg", template_id
+            img.filename, img.content, img.content_type, template_id
         )
-        # Attach base64 thumbnail so frontend can show image next to checkboxes
         try:
-            f.seek(0)
-            b64 = base64.b64encode(f.read()).decode()
-            result["image_url"] = f"data:{f.content_type};base64,{b64}"
+            b64 = base64.b64encode(img.content).decode()
+            result["image_url"] = f"data:{img.content_type};base64,{b64}"
         except Exception:
             result["image_url"] = None
         analyses.append(result)
 
-    # ── Template 21: predict DNA slider values from aggregated signals ────────
     slider_predictions = {}
     try:
         aggregated = _aggregate_image_signals(analyses)
         slider_predictions = predict_material_shape_dna(aggregated)
     except Exception as e:
-        current_app.logger.warning(f"DNA slider prediction skipped: {e}")
+        logger.warning(f"DNA slider prediction skipped: {e}")
 
-    return jsonify({
-        "success": True,
-        "analyses": analyses,
-        "skipped": skipped,
-        "template_used": template_id,
+    return {
+        "success":            True,
+        "analyses":           analyses,
+        "skipped":            skipped,
+        "template_used":      template_id,
         "slider_predictions": slider_predictions,
-    })
+    }
 
 
 # ── POST /profile/analyse/boards ──────────────────────────────────────────────
 
-@profile_bp.route("/analyse/boards", methods=["POST"])
-def analyse_boards_for_questions():
-    """
-    Step 1 of 2 — Pinterest boards flow.
+@router.post("/analyse/boards")
+async def analyse_boards_for_questions(request: Request):
+    """Step 1 of 2 — Pinterest boards flow."""
+    if not request.session.get("pinterest_connected"):
+        return JSONResponse({"error": "Pinterest not connected.", "reconnect": True}, status_code=401)
 
-    Downloads pin images from selected boards, runs Template 19/20 on each.
-    Returns per-image analysis + question + options. No DPP built yet.
-
-    POST body JSON: { "board_ids": ["id1", "id2"] }
-    Returns same shape as /analyse/images.
-    """
-    if not session.get("pinterest_connected"):
-        return jsonify({"error": "Pinterest not connected.", "reconnect": True}), 401
-
-    data = request.get_json() or {}
+    data      = await request.json()
     board_ids = data.get("board_ids") or []
     if not isinstance(board_ids, list) or not board_ids:
-        return jsonify({"error": "Please provide board_ids as a non-empty list."}), 400
+        return JSONResponse({"error": "Please provide board_ids as a non-empty list."}, status_code=400)
 
-    token = session.get("pinterest_access_token")
+    token = request.session.get("pinterest_access_token")
     try:
         all_boards = get_all_boards_with_pins(token, max_boards=25, max_pins_per_board=50)
     except Exception as e:
-        return jsonify({"error": f"Could not fetch boards: {e}"}), 500
+        return JSONResponse({"error": f"Could not fetch boards: {e}"}, status_code=500)
 
     selected = [b for b in all_boards if b.get("id") in board_ids]
     if not selected:
-        return jsonify({"error": "No matching boards found for given board_ids."}), 400
+        return JSONResponse({"error": "No matching boards found for given board_ids."}, status_code=400)
 
-    image_tuples, _ = _download_board_images(selected, max_per_board=4)
-    if not image_tuples:
-        return jsonify({"error": "No images could be downloaded from selected boards."}), 500
+    image_data_list, preview_list = _download_board_images(selected, max_per_board=4)
+    if not image_data_list:
+        return JSONResponse({"error": "No images could be downloaded from selected boards."}, status_code=500)
 
-    template_id = current_app.config.get("IMAGE_QUESTION_TEMPLATE_ID", 19)
-    current_app.logger.info(
-        f"Analysing {len(image_tuples)} board images with Template {template_id}..."
-    )
+    template_id = Config.IMAGE_QUESTION_TEMPLATE_ID
+    logger.info(f"Analysing {len(image_data_list)} board images with Template {template_id}...")
 
     analyses = []
-    for fname, img_bytes, mtype, pin_url in image_tuples:
-        result = analyse_single_image_with_questions(fname, img_bytes, mtype, template_id)
-        result["image_url"] = pin_url
+    for img, preview in zip(image_data_list, preview_list):
+        result = analyse_single_image_with_questions(img.filename, img.content, img.content_type, template_id)
+        result["image_url"] = preview.get("image_url")
         analyses.append(result)
 
-    # ── Template 21: predict DNA slider values from aggregated signals ────────
     slider_predictions = {}
     try:
         aggregated = _aggregate_image_signals(analyses)
         slider_predictions = predict_material_shape_dna(aggregated)
     except Exception as e:
-        current_app.logger.warning(f"DNA slider prediction skipped: {e}")
+        logger.warning(f"DNA slider prediction skipped: {e}")
 
-    return jsonify({
-        "success": True,
-        "analyses": analyses,
-        "template_used": template_id,
+    return {
+        "success":            True,
+        "analyses":           analyses,
+        "template_used":      template_id,
         "slider_predictions": slider_predictions,
-    })
+    }
 
 
 # ── POST /profile/build/images ────────────────────────────────────────────────
 
-@profile_bp.route("/build/images", methods=["POST"])
-def build_profile_images():
-    """
-    Step 2 of 2 — image upload flow.
+@router.post("/build/images")
+async def build_profile_images(
+    request:       Request,
+    images:        List[UploadFile] = File(...),
+    selections:    Optional[str]    = Form("[]"),
+    slider_values: Optional[str]    = Form("{}"),
+):
+    """Step 2 of 2 — image upload flow."""
+    if not images or all(f.filename == "" for f in images):
+        return JSONResponse({"error": "Please upload at least one image."}, status_code=400)
 
-    Accepts multipart/form-data:
-      images     — image files (re-analysed via T15 for raw DPP signals)
-      selections — JSON string: [{"filename", "checked": [...], "other": "..."}]
-
-    user_selections is embedded into the raw DPP before Template 16 enrichment.
-    """
-    from modules.image_analyser import analyse_images as _analyse_images
-
-    files = request.files.getlist("images")
-    if not files or all(f.filename == "" for f in files):
-        return jsonify({"error": "Please upload at least one image."}), 400
-
-    valid, skipped = _validate_images(files)
+    valid, skipped = await _read_and_validate(images)
     if not valid:
-        return jsonify({"error": "No valid images.", "skipped": skipped}), 400
+        return JSONResponse({"error": "No valid images.", "skipped": skipped}, status_code=400)
 
-    raw_sel = request.form.get("selections", "[]")
     try:
-        selections = _json.loads(raw_sel)
+        sel_list    = _json.loads(selections    or "[]")
     except Exception:
-        selections = []
-
-    # Read user-adjusted slider values from form
-    raw_sliders = request.form.get("slider_values", "{}")
+        sel_list    = []
     try:
-        slider_values = _json.loads(raw_sliders)
+        slider_dict = _json.loads(slider_values or "{}")
     except Exception:
-        slider_values = {}
+        slider_dict = {}
 
-    current_app.logger.info(
+    logger.info(
         f"Building DPP from {len(valid)} images. "
-        f"User selections provided: {bool(selections)} | "
-        f"Slider values provided: {bool(slider_values)}"
+        f"Selections: {bool(sel_list)} | Sliders: {bool(slider_dict)}"
     )
 
     try:
         analyses = _analyse_images(valid)
     except Exception as e:
-        return jsonify({"error": f"Image analysis failed: {e}"}), 500
+        return JSONResponse({"error": f"Image analysis failed: {e}"}, status_code=500)
 
     try:
         previews = []
-        for f in valid[:len(analyses)]:
+        for img in valid[:len(analyses)]:
             try:
-                f.seek(0)
-                content = f.read()
                 previews.append({
-                    "name": f.filename,
-                    "image_url": (
-                        f"data:{f.content_type};base64,"
-                        f"{base64.b64encode(content).decode()}"
-                    ),
+                    "name":      img.filename,
+                    "image_url": f"data:{img.content_type};base64,{base64.b64encode(img.content).decode()}",
                 })
             except Exception:
                 continue
 
         raw_dpp = build_dpp_from_images(analyses)
-        raw_dpp["board_summary"] = previews
-        # Store per-image analyses so _build_enrichment_params can pass rich
-        # per-image signals (styles, materials, colours, mood) to Template 16.
+        raw_dpp["board_summary"]  = previews
         raw_dpp["image_analyses"] = analyses
 
-        if selections:
-            raw_dpp["user_selections"] = _build_user_selections_string(selections)
-
-        # Store material/shape DNA with source tag
-        if slider_values:
+        if sel_list:
+            raw_dpp["user_selections"] = _build_user_selections_string(sel_list)
+        if slider_dict:
             raw_dpp["material_shape_dna"] = {
-                "material_dna": slider_values.get("material_dna", {}),
-                "shape_dna": slider_values.get("shape_dna", {}),
-                "source": "ai_predicted+user_adjusted",
+                "material_dna": slider_dict.get("material_dna", {}),
+                "shape_dna":    slider_dict.get("shape_dna", {}),
+                "source":       "ai_predicted+user_adjusted",
             }
 
-        ok = raw_dpp.get("images_analyzed", 0)
+        ok     = raw_dpp.get("images_analyzed", 0)
         failed = raw_dpp.get("images_failed", 0)
-        dpp = _enrich_and_store(raw_dpp)
+        dpp    = _enrich_and_store(raw_dpp, request.session)
 
         msg = f"Profile built from {ok} image{'s' if ok != 1 else ''}."
         if failed:
             msg += f" ({failed} failed.)"
-        return jsonify({"success": True, "profile": dpp, "message": msg, "skipped": skipped})
+        return {"success": True, "profile": dpp, "message": msg, "skipped": skipped}
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ── POST /profile/build/boards ────────────────────────────────────────────────
 
-@profile_bp.route("/build/boards", methods=["POST"])
-def build_profile_from_selected_boards():
-    """
-    Step 2 of 2 — Pinterest boards flow.
+@router.post("/build/boards")
+async def build_profile_from_selected_boards(request: Request):
+    """Step 2 of 2 — Pinterest boards flow."""
+    if not request.session.get("pinterest_connected"):
+        return JSONResponse({"error": "Pinterest not connected.", "reconnect": True}, status_code=401)
 
-    POST body JSON:
-      { "board_ids": ["id1","id2"], "selections": [{filename, checked, other}, ...] }
-    """
-    if not session.get("pinterest_connected"):
-        return jsonify({"error": "Pinterest not connected.", "reconnect": True}), 401
-
-    data = request.get_json() or {}
-    board_ids = data.get("board_ids") or []
-    selections = data.get("selections") or []
-    slider_values = data.get("slider_values") or {}
+    data        = await request.json()
+    board_ids   = data.get("board_ids") or []
+    selections  = data.get("selections") or []
+    slider_dict = data.get("slider_values") or {}
 
     if not isinstance(board_ids, list) or not board_ids:
-        return jsonify({"error": "Please provide board_ids as a non-empty list."}), 400
+        return JSONResponse({"error": "Please provide board_ids as a non-empty list."}, status_code=400)
 
-    token = session.get("pinterest_access_token")
+    token = request.session.get("pinterest_access_token")
     try:
         all_boards = get_all_boards_with_pins(token, max_boards=25, max_pins_per_board=50)
     except Exception as e:
-        return jsonify({"error": f"Could not fetch boards: {e}"}), 500
+        return JSONResponse({"error": f"Could not fetch boards: {e}"}, status_code=500)
 
     selected = [b for b in all_boards if b.get("id") in board_ids]
     if not selected:
-        return jsonify({"error": "No matching boards found for given board_ids."}), 400
+        return JSONResponse({"error": "No matching boards found for given board_ids."}, status_code=400)
 
-    image_tuples, preview_list = _download_board_images(selected, max_per_board=4)
-    if not image_tuples:
-        return jsonify({"error": "No images could be downloaded or analysed."}), 500
+    image_data_list, preview_list = _download_board_images(selected, max_per_board=4)
+    if not image_data_list:
+        return JSONResponse({"error": "No images could be downloaded or analysed."}, status_code=500)
 
     analyses = []
-    for fname, img_bytes, mtype, _ in image_tuples:
+    for img in image_data_list:
         try:
-            ana = analyse_single_image_vanilla(fname, img_bytes, mtype)
+            ana = analyse_single_image_vanilla(img.filename, img.content, img.content_type)
             analyses.append(ana)
         except Exception as e:
-            current_app.logger.debug(f"Image analysis failed for {fname}: {e}")
+            logger.debug(f"Image analysis failed for {img.filename}: {e}")
 
     if not analyses:
-        return jsonify({"error": "All image analyses failed."}), 500
+        return JSONResponse({"error": "All image analyses failed."}, status_code=500)
 
     try:
         raw_dpp = build_dpp_from_images(analyses)
-        raw_dpp["source_boards"] = [b.get("name") for b in selected]
-        raw_dpp["board_summary"] = preview_list
-        # Store per-image analyses so _build_enrichment_params can pass rich
-        # per-image signals (styles, materials, colours, mood) to Template 16.
+        raw_dpp["source_boards"]  = [b.get("name") for b in selected]
+        raw_dpp["board_summary"]  = preview_list
         raw_dpp["image_analyses"] = analyses
 
         if selections:
             raw_dpp["user_selections"] = _build_user_selections_string(selections)
-
-        # Store material/shape DNA with source tag
-        if slider_values:
+        if slider_dict:
             raw_dpp["material_shape_dna"] = {
-                "material_dna": slider_values.get("material_dna", {}),
-                "shape_dna": slider_values.get("shape_dna", {}),
-                "source": "ai_predicted+user_adjusted",
+                "material_dna": slider_dict.get("material_dna", {}),
+                "shape_dna":    slider_dict.get("shape_dna", {}),
+                "source":       "ai_predicted+user_adjusted",
             }
 
-        dpp = _enrich_and_store(raw_dpp)
-        return jsonify({
+        dpp = _enrich_and_store(raw_dpp, request.session)
+        return {
             "success": True,
             "profile": dpp,
             "message": f"Profile built from {len(analyses)} analysed images.",
-        })
+        }
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ── GET /profile/build (legacy Pinterest one-shot) ────────────────────────────
 
-@profile_bp.route("/build")
-def build_profile():
+@router.get("/build")
+async def build_profile(request: Request):
     """Legacy one-shot Pinterest DPP build — no question step."""
-    if not session.get("pinterest_connected"):
-        return jsonify({"error": "Pinterest not connected.", "reconnect": True}), 401
+    if not request.session.get("pinterest_connected"):
+        return JSONResponse({"error": "Pinterest not connected.", "reconnect": True}, status_code=401)
 
-    token = session.get("pinterest_access_token")
-    mode = session.get("pinterest_mode", "oauth")
-    current_app.logger.info(f"Building DPP via Pinterest — mode: {mode}")
+    token = request.session.get("pinterest_access_token")
+    mode  = request.session.get("pinterest_mode", "oauth")
+    logger.info(f"Building DPP via Pinterest — mode: {mode}")
 
     try:
         user_info = get_user_profile(token)
         boards = get_all_boards_with_pins(token, max_boards=5, max_pins_per_board=20)
 
     except PinterestPermissionError as e:
-        current_app.logger.error(f"403: {e}")
-        return jsonify({
+        logger.error(f"403: {e}")
+        return JSONResponse({
             "error": (
                 "Pinterest trial access cannot read boards/pins. "
                 "Go to developers.pinterest.com/apps -> click 'Upgrade access' "
                 "and request Standard access. While waiting, use the image upload option instead."
             ),
             "error_type": "trial_access",
-        }), 403
+        }, status_code=403)
 
     except PinterestAuthError as e:
-        current_app.logger.warning(f"401: {e}")
+        logger.warning(f"401: {e}")
         if mode == "direct_token":
-            return jsonify({
-                "error": "Token expired. Generate a new one from developers.pinterest.com/apps.",
+            return JSONResponse({
+                "error":      "Token expired. Generate a new one from developers.pinterest.com/apps.",
                 "error_type": "token_expired",
-                "reconnect": True,
-            }), 401
-        new_token = _try_refresh()
+                "reconnect":  True,
+            }, status_code=401)
+        new_token = _try_refresh(request.session)
         if not new_token:
-            return jsonify({"error": "Session expired. Please reconnect.", "reconnect": True}), 401
+            return JSONResponse({"error": "Session expired. Please reconnect.", "reconnect": True}, status_code=401)
         try:
             user_info = get_user_profile(new_token)
-            boards = get_all_boards_with_pins(new_token, max_boards=5, max_pins_per_board=20)
+            boards    = get_all_boards_with_pins(new_token, max_boards=5, max_pins_per_board=20)
         except PinterestPermissionError:
-            return jsonify({
-                "error": "Trial access restriction. Use image upload instead.",
-                "error_type": "trial_access",
-            }), 403
+            return JSONResponse({"error": "Trial access restriction. Use image upload instead.", "error_type": "trial_access"}, status_code=403)
         except Exception as e2:
-            return jsonify({"error": str(e2), "reconnect": True}), 500
+            return JSONResponse({"error": str(e2), "reconnect": True}, status_code=500)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
     try:
         raw_dpp = build_dpp_from_pinterest(boards)
-        raw_dpp["pinterest_user"] = session.get("pinterest_user") or user_info
-        dpp = _enrich_and_store(raw_dpp)
-        return jsonify({
+        raw_dpp["pinterest_user"] = request.session.get("pinterest_user") or user_info
+        dpp = _enrich_and_store(raw_dpp, request.session)
+        return {
             "success": True,
             "profile": dpp,
             "message": (
                 f"Profile built from {raw_dpp.get('boards_analyzed', 0)} boards "
                 f"and {raw_dpp.get('pins_analyzed', 0)} pins."
             ),
-        })
+        }
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ── GET /profile/get ──────────────────────────────────────────────────────────
 
-@profile_bp.route("/get")
-def get_profile():
-    dpp = session.get("dpp")
+@router.get("/get")
+async def get_profile(request: Request):
+    dpp = request.session.get("dpp")
     if not dpp:
-        return jsonify({"error": "No profile yet."}), 404
-    return jsonify({"profile": dpp})
+        raise HTTPException(status_code=404, detail="No profile yet.")
+    return {"profile": dpp}
 
 
 # ── GET /profile/boards ───────────────────────────────────────────────────────
 
-@profile_bp.route("/boards")
-def list_boards():
+@router.get("/boards")
+async def list_boards(request: Request):
     """Return a lightweight list of the user's Pinterest boards for the selection UI."""
-    if not session.get("pinterest_connected"):
-        return jsonify({"error": "Pinterest not connected.", "reconnect": True}), 401
-    token = session.get("pinterest_access_token")
+    if not request.session.get("pinterest_connected"):
+        return JSONResponse({"error": "Pinterest not connected.", "reconnect": True}, status_code=401)
+    token = request.session.get("pinterest_access_token")
     try:
         boards = get_boards(token, max_boards=50)
-        lightweight = [
-            {
-                "id": b.get("id"),
-                "name": b.get("name"),
-                "pin_count": b.get("pin_count"),
-                "image_url": b.get("image_url"),
-            }
+        return {"boards": [
+            {"id": b.get("id"), "name": b.get("name"), "pin_count": b.get("pin_count"), "image_url": b.get("image_url")}
             for b in boards
-        ]
-        return jsonify({"boards": lightweight})
+        ]}
     except PinterestAuthError as e:
-        return jsonify({"error": str(e), "reconnect": True}), 401
+        return JSONResponse({"error": str(e), "reconnect": True}, status_code=401)
     except PinterestPermissionError as e:
-        return jsonify({"error": str(e)}), 403
+        return JSONResponse({"error": str(e)}, status_code=403)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ── GET /profile/spotify/playlists ────────────────────────────────────────────
@@ -594,62 +533,40 @@ def _load_sample_spotify_data():
     return playlists, data
 
 
-def _load_sample_spotify_playlists():
-    playlists, _ = _load_sample_spotify_data()
-    return playlists
-
-
-@profile_bp.route("/spotify/playlists")
-def list_spotify_playlists():
+@router.get("/spotify/playlists")
+async def list_spotify_playlists(request: Request):
     """Return playlists: live from Spotify API when connected, else sample data."""
-    if not session.get("spotify_connected"):
-        return jsonify({"error": "Spotify not connected.", "reconnect": True}), 401
+    if not request.session.get("spotify_connected"):
+        return JSONResponse({"error": "Spotify not connected.", "reconnect": True}, status_code=401)
 
-    token = get_valid_spotify_token()
+    token = get_valid_spotify_token(request.session)
     fallback_reason = None
 
     if not token:
         fallback_reason = "no_token"
-        current_app.logger.warning(
-            "Spotify playlists: no valid token (session may have no spotify_access_token or refresh failed). "
-            "If the app is open on a different origin (e.g. port 3000), ensure CORS and cookies are sent."
-        )
+        logger.warning("Spotify playlists: no valid token in session.")
     else:
         try:
             live, api_status = fetch_user_playlists(token)
             if api_status == 403:
-                return jsonify({
-                    "error": "Spotify denied access to your playlists. Add your Spotify account in the Spotify Developer Dashboard (User Management) for this app.",
+                return JSONResponse({
+                    "error":     "Spotify denied access. Add your account in the Spotify Developer Dashboard.",
                     "reconnect": False,
-                }), 403
+                }, status_code=403)
             if live:
-                return jsonify({"playlists": live, "source": "spotify_api"})
+                return {"playlists": live, "source": "spotify_api"}
             fallback_reason = "empty_response" if api_status is None else f"http_{api_status}"
-            current_app.logger.warning(
-                "Spotify playlists: API returned no playlists (status=%s). Check scopes "
-                "playlist-read-private, playlist-read-collaborative; or add user in Spotify Developer Dashboard.",
-                api_status,
-            )
+            logger.warning("Spotify playlists: API returned no playlists (status=%s).", api_status)
         except Exception as e:
             fallback_reason = "api_error"
-            current_app.logger.warning(f"Spotify API playlists failed: {e}")
+            logger.warning(f"Spotify API playlists failed: {e}")
 
-    # Fallback: sample data
-    playlists = _load_sample_spotify_playlists()
-    lightweight = [
-        {
-            "id": p.get("id"),
-            "name": p.get("name"),
-            "description": p.get("description"),
-            "track_count": len(p.get("tracks", [])),
-        }
+    playlists, _ = _load_sample_spotify_data()
+    lightweight  = [
+        {"id": p.get("id"), "name": p.get("name"), "description": p.get("description"), "track_count": len(p.get("tracks", []))}
         for p in playlists
     ]
-    return jsonify({
-        "playlists": lightweight,
-        "source": "sample",
-        "fallback_reason": fallback_reason,
-    })
+    return {"playlists": lightweight, "source": "sample", "fallback_reason": fallback_reason}
 
 
 # ── POST /profile/analyse/spotify ─────────────────────────────────────────────
@@ -735,20 +652,16 @@ def _spotify_signal_to_analysis(signals: dict, playlist_names: str = "Spotify pl
     }
 
 
-@profile_bp.route("/analyse/spotify", methods=["POST"])
-def analyse_spotify():
-    """
-    Step 1 of 2 — Spotify flow. Uses Template 24 → 25 → 23.
-    When connected with Premium: fetches live playlists/tracks/audio features from Spotify API.
-    Otherwise uses sample data or derived from sample playlists.
-    """
-    if not session.get("spotify_connected"):
-        return jsonify({"error": "Spotify not connected.", "reconnect": True}), 401
+@router.post("/analyse/spotify")
+async def analyse_spotify(request: Request):
+    """Step 1 of 2 — Spotify flow. Uses Template 24 → 25 → 23."""
+    if not request.session.get("spotify_connected"):
+        return JSONResponse({"error": "Spotify not connected.", "reconnect": True}, status_code=401)
 
-    data = request.get_json() or {}
+    data         = await request.json()
     playlist_ids = data.get("playlist_ids") or []
+    token        = get_valid_spotify_token(request.session)
 
-    token = get_valid_spotify_token()
     if token and playlist_ids:
         # Live API: fetch tracks and audio features for selected playlists
         try:
@@ -762,178 +675,145 @@ def analyse_spotify():
                 return jsonify({"error": live_error}), 403 if "Forbidden" in live_error else 400
             if result:
                 top_artists, top_tracks, top_genres, audio_features_str, top_genres_list = result
-                session["spotify_playlist_names"] = playlist_names
-                session["spotify_top_genres"] = top_genres_list
                 try:
                     mood_vector = spotify_mood_vector(top_artists, top_tracks, top_genres, audio_features_str)
-                    signals = spotify_mood_to_attributes(mood_vector)
+                    signals     = spotify_mood_to_attributes(mood_vector)
                 except Exception as e:
-                    current_app.logger.exception(e)
-                    return jsonify({"error": f"Design analysis failed: {e}"}), 500
+                    logger.exception(e)
+                    return JSONResponse({"error": f"Design analysis failed: {e}"}, status_code=500)
                 analysis = _spotify_signal_to_analysis(signals, ", ".join(playlist_names))
                 slider_predictions = {}
                 try:
-                    aggregated = {
-                        "styles": signals.get("styles", []),
-                        "materials": signals.get("materials", []),
+                    slider_predictions = predict_material_shape_dna_spotify({
+                        "styles": signals.get("styles", []), "materials": signals.get("materials", []),
                         "colours": signals.get("colours", []) or signals.get("dominant_colours", []),
-                        "mood_tags": signals.get("mood_tags", []),
-                        "spatial_density": signals.get("spatial_density", "moderate"),
-                    }
-                    slider_predictions = predict_material_shape_dna_spotify(aggregated)
+                        "mood_tags": signals.get("mood_tags", []), "spatial_density": signals.get("spatial_density", "moderate"),
+                    })
                 except Exception as e:
-                    current_app.logger.warning(f"Spotify DNA prediction skipped: {e}")
-                session["spotify_analyses"] = [analysis]
-                session["spotify_slider_predictions"] = slider_predictions
-                session["spotify_playlist_ids"] = playlist_ids
-                session["spotify_mood_vector"] = mood_vector
-                return jsonify({
-                    "success": True,
-                    "analyses": [analysis],
-                    "slider_predictions": slider_predictions,
-                    "playlist_ids": playlist_ids,
-                    "source": "spotify_api",
-                })
+                    logger.warning(f"Spotify DNA prediction skipped: {e}")
+                request.session["spotify_analyses"]          = [analysis]
+                request.session["spotify_slider_predictions"] = slider_predictions
+                request.session["spotify_playlist_ids"]      = playlist_ids
+                request.session["spotify_playlist_names"]    = playlist_names
+                request.session["spotify_mood_vector"]       = mood_vector
+                request.session["spotify_top_genres"]        = top_genres_list
+                return {"success": True, "analyses": [analysis], "slider_predictions": slider_predictions, "playlist_ids": playlist_ids, "source": "spotify_api"}
         except Exception as e:
-            current_app.logger.warning(f"Spotify live analyse failed, falling back to sample: {e}")
+            logger.warning(f"Spotify live analyse failed, falling back to sample: {e}")
 
-    # Sample data or no playlist_ids
     playlists, spotify_data = _load_sample_spotify_data()
     if not playlists:
-        return jsonify({"error": "No playlists available. Connect Spotify and select playlists."}), 500
+        return JSONResponse({"error": "No playlists available. Connect Spotify and select playlists."}, status_code=500)
 
-    if playlist_ids:
-        selected = [p for p in playlists if p.get("id") in playlist_ids]
-    else:
-        selected = playlists
-
+    selected = [p for p in playlists if p.get("id") in playlist_ids] if playlist_ids else playlists
     if not selected:
-        return jsonify({"error": "No playlists selected."}), 400
+        return JSONResponse({"error": "No playlists selected."}, status_code=400)
 
-    top_artists, top_tracks, top_genres, audio_features_str = _build_spotify_user_summary_params(
-        playlists, selected, spotify_data
-    )
+    top_artists, top_tracks, top_genres, audio_features_str = _build_spotify_user_summary_params(playlists, selected, spotify_data)
 
     try:
         mood_vector = spotify_mood_vector(top_artists, top_tracks, top_genres, audio_features_str)
-        signals = spotify_mood_to_attributes(mood_vector)
+        signals     = spotify_mood_to_attributes(mood_vector)
     except Exception as e:
-        current_app.logger.exception(e)
-        return jsonify({"error": f"Design analysis failed: {e}"}), 500
+        logger.exception(e)
+        return JSONResponse({"error": f"Design analysis failed: {e}"}, status_code=500)
 
     playlist_names = [p.get("name", "") for p in selected if p.get("name")]
-    analysis = _spotify_signal_to_analysis(signals, ", ".join(playlist_names) or "Spotify playlists")
+    analysis       = _spotify_signal_to_analysis(signals, ", ".join(playlist_names) or "Spotify playlists")
 
     slider_predictions = {}
     try:
-        aggregated = {
-            "styles": signals.get("styles", []),
-            "materials": signals.get("materials", []),
+        slider_predictions = predict_material_shape_dna_spotify({
+            "styles": signals.get("styles", []), "materials": signals.get("materials", []),
             "colours": signals.get("colours", []) or signals.get("dominant_colours", []),
-            "mood_tags": signals.get("mood_tags", []),
-            "spatial_density": signals.get("spatial_density", "moderate"),
-        }
-        slider_predictions = predict_material_shape_dna_spotify(aggregated)
+            "mood_tags": signals.get("mood_tags", []), "spatial_density": signals.get("spatial_density", "moderate"),
+        })
     except Exception as e:
-        current_app.logger.warning(f"Spotify DNA prediction skipped: {e}")
+        logger.warning(f"Spotify DNA prediction skipped: {e}")
 
-    session["spotify_analyses"] = [analysis]
-    session["spotify_slider_predictions"] = slider_predictions
-    session["spotify_playlist_ids"] = [p.get("id") for p in selected]
-    session["spotify_playlist_names"] = [p.get("name", "") for p in selected if p.get("name")]
-    session["spotify_mood_vector"] = mood_vector
     us = spotify_data.get("user_summary") or {}
-    session["spotify_top_genres"] = us.get("top_genres") or spotify_data.get("top_genres") or []
+    request.session["spotify_analyses"]          = [analysis]
+    request.session["spotify_slider_predictions"] = slider_predictions
+    request.session["spotify_playlist_ids"]      = [p.get("id") for p in selected]
+    request.session["spotify_playlist_names"]    = playlist_names
+    request.session["spotify_mood_vector"]       = mood_vector
+    request.session["spotify_top_genres"]        = us.get("top_genres") or spotify_data.get("top_genres") or []
 
-    return jsonify({
-        "success": True,
-        "analyses": [analysis],
-        "slider_predictions": slider_predictions,
-        "playlist_ids": session["spotify_playlist_ids"],
-    })
+    return {"success": True, "analyses": [analysis], "slider_predictions": slider_predictions, "playlist_ids": request.session["spotify_playlist_ids"]}
 
 
 # ── POST /profile/build/spotify ───────────────────────────────────────────────
 
-@profile_bp.route("/build/spotify", methods=["POST"])
-def build_profile_spotify():
-    """
-    Step 2 of 2 — Spotify flow. Build DPP from stored Spotify analysis + selections + sliders.
-    """
-    if not session.get("spotify_connected"):
-        return jsonify({"error": "Spotify not connected.", "reconnect": True}), 401
+@router.post("/build/spotify")
+async def build_profile_spotify(request: Request):
+    """Step 2 of 2 — Spotify flow. Build DPP from stored Spotify analysis + selections + sliders."""
+    if not request.session.get("spotify_connected"):
+        return JSONResponse({"error": "Spotify not connected.", "reconnect": True}, status_code=401)
 
-    analyses = session.get("spotify_analyses") or []
+    analyses = request.session.get("spotify_analyses") or []
     if not analyses:
-        return jsonify({"error": "Run analyse/spotify first (Step 1).", "reconnect": False}), 400
+        return JSONResponse({"error": "Run analyse/spotify first (Step 1).", "reconnect": False}, status_code=400)
 
-    data = request.get_json() or {}
-    selections = data.get("selections") or []
-    slider_values = data.get("slider_values") or {}
+    data        = await request.json()
+    selections  = data.get("selections") or []
+    slider_dict = data.get("slider_values") or {}
 
     try:
         raw_dpp = build_dpp_from_images(analyses)
-        raw_dpp["source"] = "spotify"
-        playlist_names = session.get("spotify_playlist_names") or []
-        raw_dpp["board_summary"] = [{"name": n, "pin_count": 0, "image_url": ""} for n in (playlist_names if playlist_names else ["Spotify playlists"])]
-        raw_dpp["image_analyses"] = analyses
-        raw_dpp["spotify_top_genres"] = session.get("spotify_top_genres") or []
-        mood_vector = session.get("spotify_mood_vector")
+        raw_dpp["source"]             = "spotify"
+        playlist_names                = request.session.get("spotify_playlist_names") or []
+        raw_dpp["board_summary"]      = [{"name": n, "pin_count": 0, "image_url": ""} for n in (playlist_names or ["Spotify playlists"])]
+        raw_dpp["image_analyses"]     = analyses
+        raw_dpp["spotify_top_genres"] = request.session.get("spotify_top_genres") or []
+        mood_vector = request.session.get("spotify_mood_vector")
         if mood_vector:
             raw_dpp["mood_vector"] = mood_vector
 
         if selections:
             raw_dpp["user_selections"] = _build_user_selections_string(selections)
-
-        if slider_values:
+        if slider_dict:
             raw_dpp["material_shape_dna"] = {
-                "material_dna": slider_values.get("material_dna", {}),
-                "shape_dna": slider_values.get("shape_dna", {}),
-                "source": "ai_predicted+user_adjusted",
+                "material_dna": slider_dict.get("material_dna", {}),
+                "shape_dna":    slider_dict.get("shape_dna", {}),
+                "source":       "ai_predicted+user_adjusted",
             }
 
-        dpp = _enrich_and_store(raw_dpp)
-        dpp["source"] = "spotify"
+        dpp = _enrich_and_store(raw_dpp, request.session)
+        dpp["source"]        = "spotify"
         dpp["board_summary"] = raw_dpp.get("board_summary") or [{"name": "Spotify playlists", "pin_count": 0, "image_url": ""}]
         if mood_vector:
             dpp["mood_vector"] = mood_vector
-        session.pop("spotify_analyses", None)
-        session.pop("spotify_slider_predictions", None)
-        session.pop("spotify_playlist_ids", None)
-        session.pop("spotify_playlist_names", None)
-        session.pop("spotify_mood_vector", None)
-        session.pop("spotify_top_genres", None)
 
-        return jsonify({
-            "success": True,
-            "profile": dpp,
-            "message": "Profile built from your Spotify taste.",
-        })
+        for key in ("spotify_analyses", "spotify_slider_predictions", "spotify_playlist_ids",
+                    "spotify_playlist_names", "spotify_mood_vector", "spotify_top_genres"):
+            request.session.pop(key, None)
+
+        return {"success": True, "profile": dpp, "message": "Profile built from your Spotify taste."}
     except Exception as e:
-        current_app.logger.exception(e)
-        return jsonify({"error": str(e)}), 500
+        logger.exception(e)
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ── DELETE /profile/clear ─────────────────────────────────────────────────────
 
-@profile_bp.route("/clear", methods=["DELETE"])
-def clear_profile():
-    session.pop("dpp", None)
-    return jsonify({"message": "Profile cleared."})
+@router.delete("/clear")
+async def clear_profile(request: Request):
+    request.session.pop("dpp", None)
+    return {"message": "Profile cleared."}
 
 
 # ── Private ───────────────────────────────────────────────────────────────────
 
-def _try_refresh():
+def _try_refresh(session: dict):
     from modules.pinterest_auth import refresh_access_token
     rt = session.get("pinterest_refresh_token")
     if not rt:
         return None
     try:
         new = refresh_access_token(rt)
-        session["pinterest_access_token"] = new["access_token"]
+        session["pinterest_access_token"]  = new["access_token"]
         session["pinterest_refresh_token"] = new.get("refresh_token", rt)
         return new["access_token"]
     except Exception as e:
-        current_app.logger.error(f"Refresh failed: {e}")
+        logger.error(f"Pinterest refresh failed: {e}")
         return None

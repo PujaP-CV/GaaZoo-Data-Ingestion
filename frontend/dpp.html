@@ -2290,10 +2290,33 @@
         <!-- Toast -->
         <div class="toast" id="toast"></div>
 
+        <!-- Load API base URL from config.js (same folder on S3, or same origin on Flask) -->
+        <!-- If this page is opened directly (not inside the unified app's iframe),
+             redirect to the unified app and activate the Design Profile panel. -->
+        <script>
+          if (window.self === window.top) {
+            window.location.replace('index.html?panel=dpp');
+          }
+        </script>
+        <script src="config.js" onerror="window.GAAZOO_API=window.GAAZOO_API||''"></script>
         <script>
           // ── Config ───────────────────────────────────────────────────────
-          // Use same host as the page (localhost or 127.0.0.1) so Spotify callback session cookie matches
-          const API = '';
+          // Session cookies are hostname-bound (localhost ≠ 127.0.0.1).
+          // Derive the API host from the current page hostname so the same
+          // cookie sent during OAuth login is included in every API call:
+          //   page at localhost:3000   → API = http://localhost:8000   (Pinterest)
+          //   page at 127.0.0.1:3000  → API = http://127.0.0.1:8000   (Spotify)
+          //   page on S3 / EC2        → API = window.GAAZOO_API as-is
+          (function(){
+            const raw = window.GAAZOO_API || window.parent?.GAAZOO_API || '';
+            if (raw && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+              try {
+                const u = new URL(raw);
+                window.GAAZOO_API = `${u.protocol}//${window.location.hostname}${u.port ? ':' + u.port : ''}`;
+              } catch(_) {}
+            }
+          })();
+          const API = window.GAAZOO_API || '';
 
           // ── State ────────────────────────────────────────────────────────
           let state = {
@@ -2317,7 +2340,9 @@
             if (params.get('error')) {
               const err = params.get('error');
               const msg = err === 'spotify_state_mismatch'
-                ? 'Spotify: use the same address for the app and redirect URI (e.g. open this page at http://127.0.0.1:5000 and set Spotify redirect to http://127.0.0.1:5000/auth/spotify/callback).'
+                ? 'Spotify: open the app at http://127.0.0.1:3000 and ensure the Spotify dashboard redirect URI is http://127.0.0.1:8000/auth/spotify/callback.'
+                : err === 'pinterest_state_mismatch'
+                ? 'Pinterest: open the app at http://localhost:3000 and ensure the Pinterest dashboard redirect URI is http://localhost:8000/auth/pinterest/callback.'
                 : 'Connection failed: ' + err;
               showToast(msg, true);
               window.history.replaceState({}, '', window.location.pathname);
@@ -2559,13 +2584,17 @@
           // the parent shell and auto-switches to the Design Profile panel.
           function connectPinterest(e) {
             e.preventDefault();
-            window.top.location.href = '/auth/pinterest/login';
+            // Navigate the TOP window so Pinterest OAuth works from within an iframe.
+            // After OAuth, the backend redirects to FRONTEND_URL/?pinterest_connected=true
+            // Pinterest requires localhost (not 127.0.0.1) — use PINTEREST_API
+            const PAPI = window.PINTEREST_API || API;
+            window.top.location.href = PAPI + '/auth/pinterest/login';
           }
 
           // ── Connect with Spotify ─────────────────────────────────────────
           function connectSpotify(e) {
             e.preventDefault();
-            window.top.location.href = '/auth/spotify/login';
+            window.top.location.href = API + '/auth/spotify/login';
           }
 
           async function disconnectSpotify() {
