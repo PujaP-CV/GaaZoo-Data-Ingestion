@@ -11,7 +11,8 @@ from pathlib import Path
 import requests
 from flask import Blueprint, Response, jsonify, request, send_from_directory
 
-from config import DATA_DIR, DIR_3D, MESHY_API_KEY, MESHY_BASE
+from config import DATA_DIR, DIR_3D, DIR_3D_SCALED, DIR_TEMP, MESHY_API_KEY, MESHY_BASE
+from modules.model_scaler import scale_model
 
 viewer_bp = Blueprint("viewer", __name__)
 
@@ -175,3 +176,70 @@ def generate_3d():
             return jsonify({"error": f"Unexpected status: {status}"}), 500
 
         time.sleep(2)
+
+
+# ── Load 3D model: upload GLB/OBJ and scale or resize (per Amal: 1 param = scale, 2–3 = resize) ──
+
+ALLOWED_3D_EXT = (".glb", ".obj")
+
+
+@viewer_bp.route("/scale-3d", methods=["POST"])
+def scale_3d():
+    """Upload a .glb or .obj file and optionally scale (1 dim) or resize (2–3 dims) to real-world dimensions."""
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"error": "No file provided"}), 400
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_3D_EXT:
+        return jsonify({"error": f"Only .glb and .obj are supported. Got: {ext or 'no extension'}"}), 400
+    obj_width  = request.form.get("obj_width",  "").strip() or None
+    obj_height = request.form.get("obj_height", "").strip() or None
+    obj_depth  = request.form.get("obj_depth",  "").strip() or None
+    obj_unit   = request.form.get("obj_unit",   "cm").strip() or "cm"
+    has_dims   = any([obj_width, obj_height, obj_depth])
+
+    load_id = uuid.uuid4().hex[:12]
+
+    def _file_url(path: Path) -> str:
+        try:
+            rel = path.resolve().relative_to(Path(str(DATA_DIR)).resolve())
+            return "/api/files/" + str(rel).replace("\\", "/")
+        except ValueError:
+            return ""
+
+    # Use temp dir for upload; only the scaled result is stored under data/3d/scaled/
+    orig_path = Path(str(DIR_TEMP)) / f"load_{load_id}_orig{ext}"
+    orig_path.parent.mkdir(parents=True, exist_ok=True)
+    file.save(str(orig_path))
+
+    model_url = None
+    scaled_model_url = None
+    scale_info = None
+
+    if has_dims:
+        scaled_path = Path(str(DIR_3D_SCALED)) / f"load_{load_id}_scaled.glb"
+        try:
+            scale_info = scale_model(
+                str(orig_path), str(scaled_path),
+                width  = float(obj_width)  if obj_width  else None,
+                height = float(obj_height) if obj_height else None,
+                depth  = float(obj_depth)  if obj_depth  else None,
+                unit   = obj_unit,
+            )
+            scaled_model_url = _file_url(scaled_path)
+        except Exception as e:
+            scale_info = {"error": str(e)}
+        finally:
+            try:
+                orig_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+    else:
+        # No scaling: serve from temp for viewing only (not stored under 3d/)
+        model_url = _file_url(orig_path)
+
+    return jsonify({
+        "model_url":        model_url,
+        "scaled_model_url": scaled_model_url,
+        "scale_info":       scale_info,
+    })

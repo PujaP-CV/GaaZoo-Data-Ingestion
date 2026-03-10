@@ -13,13 +13,17 @@ from dotenv import load_dotenv
 ROOT     = Path(__file__).resolve().parent.parent   # repo root
 load_dotenv(ROOT / ".env")
 BACKEND  = Path(__file__).resolve().parent          # backend/
-DATA_DIR = ROOT / "data"
-DIR_2D   = DATA_DIR / "2d"
-DIR_3D   = DATA_DIR / "3d"
+DATA_DIR      = ROOT / "data"
+DIR_2D        = DATA_DIR / "2d"
+DIR_3D        = DATA_DIR / "3d"
+DIR_3D_SCALED = DATA_DIR / "3d" / "scaled"
+DIR_TEMP      = DATA_DIR / "temp"
 
 DATA_DIR.mkdir(exist_ok=True)
 DIR_2D.mkdir(exist_ok=True)
 DIR_3D.mkdir(exist_ok=True)
+DIR_3D_SCALED.mkdir(parents=True, exist_ok=True)
+DIR_TEMP.mkdir(parents=True, exist_ok=True)
 
 
 # ── Flask ──────────────────────────────────────────────────────────────

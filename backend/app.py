@@ -29,7 +29,8 @@ def create_app() -> Flask:
     # ── Neo4j lazy init — skip for OAuth callbacks and static serving ──
     @app.before_request
     def _ensure_db():
-        skip_prefixes = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known")
+        skip_prefixes = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known",
+                         "/generate-3d", "/proxy-glb", "/scale-3d")
         if any(request.path == p or request.path.startswith(p + "/") for p in skip_prefixes):
             return
         if request.path == "/" or request.path.startswith("/static"):
@@ -63,4 +64,7 @@ def create_app() -> Flask:
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True, port=5000)
+    # use_reloader=False: reloader watches imported modules (e.g. trimesh -> unittest);
+    # when scale_model runs, that can trigger a "change" on Windows and restart the server
+    # mid-request, causing "Failed to fetch" on /scale-3d. Restart the process manually after code changes.
+    app.run(debug=True, port=5000, use_reloader=False)

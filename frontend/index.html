@@ -274,6 +274,9 @@ body{
   color:var(--white);background:var(--ink);border-color:var(--ink);
 }
 .btn-ink:hover:not(:disabled){background:var(--ink2);border-color:var(--ink2)}
+.load3d-view-btn.active{background:var(--neo);border-color:var(--neo);color:var(--white)}
+.load3d-view-btn:not(.active){background:var(--bg2);border:1px solid var(--border);color:var(--ink2)}
+.load3d-view-btn:not(.active):hover{background:var(--bg3);border-color:var(--ink3);color:var(--ink)}
 .btn-amz{
   color:var(--amz);background:var(--amz-light);border-color:var(--amz-border);
 }
@@ -524,6 +527,10 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
 .drop:hover,.drop.over{
   border-color:var(--ink);background:var(--bg2);
 }
+.drop.has-file{
+  border-color:var(--neo);background:var(--neo-light);
+}
+.drop.has-file .drop-icon{opacity:.9}
 .drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop-icon{font-size:2rem;display:block;margin-bottom:.75rem}
 .drop p{font-size:.9rem;color:var(--ink3)}
@@ -633,6 +640,11 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
     <button class="nav-item" data-panel="upload">
       <span class="nav-icon">🔮</span>
       Upload → 3D
+    </button>
+
+    <button class="nav-item" data-panel="load3d">
+      <span class="nav-icon">📐</span>
+      Load 3D model
     </button>
   </nav>
 
@@ -934,6 +946,85 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
         <model-viewer id="upMV" auto-rotate camera-controls shadow-intensity="1" exposure="1.1"></model-viewer>
       </div>
       <div id="dlRow" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL: LOAD 3D MODEL (upload .glb/.obj → scale or resize) ─────────── -->
+  <div class="panel" id="panel-load3d">
+    <div class="page-head">
+      <div class="page-title">Load 3D model</div>
+      <div class="page-desc">Upload a .glb or .obj file and optionally scale (one dimension) or resize (two or three dimensions) to real-world size. No Meshy API needed.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-label"><span class="step-num">1</span>Select 3D file</div>
+      </div>
+      <div class="drop" id="load3dDrop">
+        <input type="file" id="load3dFile" accept=".glb,.obj"/>
+        <span class="drop-icon">📦</span>
+        <p><strong>Click or drag a .glb or .obj file here</strong></p>
+        <span class="hint">GLB · OBJ — max 50 MB</span>
+        <div id="load3dFileLabel" style="display:none;margin-top:.5rem;font-size:.85rem;color:var(--ink2);font-weight:500"></div>
+      </div>
+
+      <div class="divider" style="margin-top:1.25rem"></div>
+
+      <div style="margin-bottom:.75rem">
+        <div class="card-label" style="margin-bottom:.75rem">
+          <span class="step-num">2</span>
+          Scale or resize
+          <span style="font-family:'Instrument Sans',sans-serif;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink4);margin-left:.3rem">(optional)</span>
+        </div>
+        <div class="form-row" style="flex-wrap:wrap">
+          <div class="fg" style="min-width:80px;max-width:110px">
+            <label>Width</label>
+            <input id="load3dWidth" type="number" min="0" step="any" placeholder="e.g. 200"/>
+          </div>
+          <div class="fg" style="min-width:80px;max-width:110px">
+            <label>Height</label>
+            <input id="load3dHeight" type="number" min="0" step="any" placeholder="e.g. 85"/>
+          </div>
+          <div class="fg" style="min-width:80px;max-width:110px">
+            <label>Depth</label>
+            <input id="load3dDepth" type="number" min="0" step="any" placeholder="e.g. 90"/>
+          </div>
+          <div class="fg" style="min-width:72px;max-width:86px">
+            <label>Unit</label>
+            <select id="load3dUnit">
+              <option value="cm" selected>cm</option>
+              <option value="mm">mm</option>
+              <option value="m">m</option>
+              <option value="in">in</option>
+              <option value="ft">ft</option>
+            </select>
+          </div>
+        </div>
+        <p style="font-size:.72rem;color:var(--ink4);margin-top:.5rem;line-height:1.55">
+          Width (X) · Height (Y) · Depth (Z). Leave blank to view at original scale.
+          One value = scale (proportional, no skew). Two or three = resize to exact size (may skew).
+        </p>
+      </div>
+
+      <button class="btn btn-ink btn-lg" id="btnLoad3d" style="margin-top:1.1rem" disabled>
+        <span>✦</span> <span id="load3dBtnLabel">Load &amp; show</span>
+      </button>
+      <div class="status st-idle" id="load3dStatus"></div>
+    </div>
+
+    <div class="result-wrap card" id="load3dResultWrap">
+      <div class="res-badge"><span class="pulse"></span><span id="load3dBadgeText">Model loaded</span></div>
+      <div id="load3dScaleBadge" style="display:none;margin-bottom:.85rem;padding:.55rem .85rem;background:var(--neo-light);border:1px solid var(--neo-border);border-radius:var(--r);font-size:.78rem;color:var(--neo);font-family:'JetBrains Mono',monospace;line-height:1.6"></div>
+      <div id="load3dViewSwitch" style="display:none;margin-bottom:.5rem;gap:.5rem;flex-wrap:wrap;" class="load3d-view-row">
+        <button type="button" class="btn btn-ink load3d-view-btn" data-view="original" style="font-size:.8rem;padding:.4rem .75rem">View original</button>
+        <button type="button" class="btn btn-ink load3d-view-btn active" data-view="scaled" style="font-size:.8rem;padding:.4rem .75rem">View scaled</button>
+      </div>
+      <div id="load3dShowingLabel" style="display:none;margin-bottom:.25rem;font-size:.8rem;color:var(--ink3);font-weight:600"></div>
+      <p id="load3dCameraHint" style="display:none;margin-bottom:.5rem;font-size:.7rem;color:var(--ink4)">Camera is fixed so you can see the size difference between original and scaled.</p>
+      <div class="model-wrap">
+        <model-viewer id="load3dMV" auto-rotate camera-controls shadow-intensity="1" exposure="1.1"></model-viewer>
+      </div>
+      <div id="load3dDlRow" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem"></div>
     </div>
   </div>
 
@@ -1569,6 +1660,203 @@ btnConvert.addEventListener('click', async()=>{
     err('upStatus','Connection error — is the server running on port 5000?');
   }
   btnConvert.disabled=false;
+});
+
+/* ──────────────────────────────────────────────
+   LOAD 3D MODEL (upload .glb/.obj → scale or resize)
+────────────────────────────────────────────── */
+const load3dDrop=document.getElementById('load3dDrop');
+const load3dFile=document.getElementById('load3dFile');
+const btnLoad3d=document.getElementById('btnLoad3d');
+const load3dResultWrap=document.getElementById('load3dResultWrap');
+const load3dMV=document.getElementById('load3dMV');
+
+['dragenter','dragover','dragleave','drop'].forEach(ev=>
+  load3dDrop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation()}));
+['dragenter','dragover'].forEach(ev=>
+  load3dDrop.addEventListener(ev,()=>load3dDrop.classList.add('over')));
+['dragleave','drop'].forEach(ev=>
+  load3dDrop.addEventListener(ev,()=>load3dDrop.classList.remove('over')));
+
+load3dDrop.addEventListener('drop',e=>{
+  const f=e.dataTransfer.files[0];
+  if(f&&(f.name.toLowerCase().endsWith('.glb')||f.name.toLowerCase().endsWith('.obj'))){
+    load3dFile.files=e.dataTransfer.files;
+    updateLoad3dButton();
+  }
+});
+load3dFile.addEventListener('change',function(){ if(this.files[0]) updateLoad3dButton(); });
+
+function getLoad3dDims(){
+  return {
+    w: document.getElementById('load3dWidth').value.trim(),
+    h: document.getElementById('load3dHeight').value.trim(),
+    d: document.getElementById('load3dDepth').value.trim(),
+    unit: document.getElementById('load3dUnit').value,
+  };
+}
+
+function updateLoad3dButton(){
+  const file=load3dFile.files&&load3dFile.files[0];
+  const {w,h,d}=getLoad3dDims();
+  const hasDims=!!(w||h||d);
+  btnLoad3d.disabled=!file;
+  const lbl=document.getElementById('load3dBtnLabel');
+  if(lbl) lbl.textContent=hasDims?'Scale / Resize':'Load & show';
+  const fileLabel=document.getElementById('load3dFileLabel');
+  if(fileLabel){
+    if(file){
+      fileLabel.textContent='✓ Selected: '+file.name;
+      fileLabel.style.display='block';
+      load3dDrop.classList.add('has-file');
+    }else{
+      fileLabel.textContent='';
+      fileLabel.style.display='none';
+      load3dDrop.classList.remove('has-file');
+    }
+  }
+}
+
+['load3dWidth','load3dHeight','load3dDepth','load3dUnit'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){ el.addEventListener('input',updateLoad3dButton); el.addEventListener('change',updateLoad3dButton); }
+});
+
+let load3dOriginalBlobUrl=null;
+
+// Fixed camera when comparing original vs scaled so the scaled (larger) model visibly appears bigger
+const LOAD3D_FIXED_ORBIT='0deg 75deg 3m';
+load3dMV.addEventListener('load',()=>{
+  if(load3dResultWrap.dataset.originalUrl&&load3dResultWrap.dataset.scaledUrl){
+    load3dMV.setAttribute('camera-orbit',LOAD3D_FIXED_ORBIT);
+  }
+});
+
+function updateLoad3dShowingLabel(view){
+  const lab=document.getElementById('load3dShowingLabel');
+  if(!lab) return;
+  const origDims=load3dResultWrap.dataset.originalDims||'';
+  const scaledDims=load3dResultWrap.dataset.scaledDims||'';
+  if(view==='original') lab.textContent=origDims?'Currently showing: Original ('+origDims+')':'Currently showing: Original (your uploaded file)';
+  else lab.textContent=scaledDims?'Currently showing: Scaled ('+scaledDims+')':'Currently showing: Scaled model';
+  lab.style.display='block';
+}
+load3dResultWrap.addEventListener('click',e=>{
+  const btn=e.target.closest('.load3d-view-btn');
+  if(!btn||!load3dResultWrap.dataset.originalUrl) return;
+  const view=btn.getAttribute('data-view');
+  const url=view==='original'?load3dResultWrap.dataset.originalUrl:load3dResultWrap.dataset.scaledUrl;
+  if(url){ load3dMV.setAttribute('src',url); load3dResultWrap.querySelectorAll('.load3d-view-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); updateLoad3dShowingLabel(view); }
+});
+
+btnLoad3d.addEventListener('click',async()=>{
+  const file=load3dFile.files&&load3dFile.files[0];
+  if(!file) return;
+  if(load3dOriginalBlobUrl){ URL.revokeObjectURL(load3dOriginalBlobUrl); load3dOriginalBlobUrl=null; }
+  load3dOriginalBlobUrl=URL.createObjectURL(file);
+  load3dResultWrap.classList.remove('on');
+  document.getElementById('load3dScaleBadge').style.display='none';
+  const viewSwitchEl=document.getElementById('load3dViewSwitch');
+  if(viewSwitchEl) viewSwitchEl.style.display='none';
+  const showingLabEl=document.getElementById('load3dShowingLabel');
+  if(showingLabEl) showingLabEl.style.display='none';
+  const cameraHintEl=document.getElementById('load3dCameraHint');
+  if(cameraHintEl) cameraHintEl.style.display='none';
+  btnLoad3d.disabled=true;
+  const {w,h,d,unit}=getLoad3dDims();
+  const hasDims=!!(w||h||d);
+
+  const fd=new FormData();
+  fd.append('file',file);
+  if(w) fd.append('obj_width',w);
+  if(h) fd.append('obj_height',h);
+  if(d) fd.append('obj_depth',d);
+  fd.append('obj_unit',unit);
+
+  loading('load3dStatus', hasDims?'Scaling / resizing…':'Loading…');
+
+  try{
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(), 120000);
+    const base=window.location.origin||'http://127.0.0.1:5000';
+    const r=await fetch(base+'/scale-3d',{method:'POST',body:fd,signal:ctrl.signal});
+    clearTimeout(t);
+    let resp={};
+    try{ resp=await r.json(); }catch(_){ if(!r.ok) resp={error:'Server error '+r.status}; }
+    if(!r.ok){
+      err('load3dStatus',resp.error||'Request failed');
+      btnLoad3d.disabled=false;
+      return;
+    }
+    const isScaled=!!resp.scaled_model_url&&!(resp.scale_info&&resp.scale_info.error);
+    const viewUrl=isScaled?resp.scaled_model_url:(load3dOriginalBlobUrl||resp.model_url);
+    load3dMV.setAttribute('src',viewUrl);
+    load3dResultWrap.classList.add('on');
+    document.getElementById('load3dBadgeText').textContent=isScaled?'Model scaled / resized':'Model loaded';
+
+    const badge=document.getElementById('load3dScaleBadge');
+    if(isScaled&&resp.scale_info&&resp.scale_info.original){
+      const si=resp.scale_info;
+      const u=si.unit||unit;
+      const orig=si.original;
+      const scl=si.scaled;
+      let scaleNote='';
+      if(si.mode==='scale'&&si.scale_factors){
+        const onlyW=!!w&&!h&&!d, onlyH=!w&&!!h&&!d, onlyD=!w&&!h&&!!d;
+        const dimName=onlyW?'width':onlyH?'height':'depth';
+        const targetVal=onlyW?scl.w:onlyH?scl.h:scl.d;
+        const origVal=onlyW?orig.w:onlyH?orig.h:orig.d;
+        const k=onlyW?si.scale_factors.x:onlyH?si.scale_factors.y:si.scale_factors.z;
+        if(k!=null&&(onlyW||onlyH||onlyD)) scaleNote=`<br><span style="opacity:.9;font-size:.72rem">You set one dimension (${dimName} ${targetVal} ${u}). Scale factor = ${targetVal} ÷ ${origVal} ≈ ${Number(k).toFixed(3)}. That same factor was applied to the other axes so the model keeps its shape (no skew).</span>`;
+        else scaleNote='<br><span style="opacity:.85;font-size:.7rem">One dimension was set → whole model scaled proportionally (same factor on all axes, no skew).</span>';
+      }else if(si.mode==='scale') scaleNote='<br><span style="opacity:.85;font-size:.7rem">One dimension was set → whole model scaled proportionally (same factor on all axes, no skew).</span>';
+      badge.innerHTML=`<strong>${si.mode==='scale'?'Scaled':'Resized'}</strong> → ${scl.w} × ${scl.h} × ${scl.d} ${u} (W × H × D)<br><span style="opacity:.7;font-size:.68rem">Original: ${orig.w} × ${orig.h} × ${orig.d} ${u}</span>${scaleNote}`;
+      badge.style.display='block';
+      badge.style.background='var(--neo-light)';
+      badge.style.borderColor='var(--neo-border)';
+    }else if(hasDims&&resp.scale_info&&resp.scale_info.error){
+      badge.style.background='var(--red-light)';
+      badge.style.borderColor='var(--red-border)';
+      badge.style.color='var(--red)';
+      badge.innerHTML='⚠ '+esc(resp.scale_info.error);
+      badge.style.display='block';
+    }
+
+    if(isScaled&&resp.scaled_model_url){
+      load3dResultWrap.dataset.originalUrl=load3dOriginalBlobUrl||'';
+      load3dResultWrap.dataset.scaledUrl=resp.scaled_model_url;
+      if(resp.scale_info&&resp.scale_info.original&&resp.scale_info.scaled){
+        const o=resp.scale_info.original,u=resp.scale_info.unit||unit;
+        const s=resp.scale_info.scaled;
+        load3dResultWrap.dataset.originalDims=`${o.w} × ${o.h} × ${o.d} ${u}`;
+        load3dResultWrap.dataset.scaledDims=`${s.w} × ${s.h} × ${s.d} ${u}`;
+        const origBtn=viewSwitchEl&&viewSwitchEl.querySelector('.load3d-view-btn[data-view="original"]');
+        const scaledBtn=viewSwitchEl&&viewSwitchEl.querySelector('.load3d-view-btn[data-view="scaled"]');
+        if(origBtn) origBtn.textContent=`View original (${o.w} × ${o.h} × ${o.d} ${u})`;
+        if(scaledBtn) scaledBtn.textContent=`View scaled (${s.w} × ${s.h} × ${s.d} ${u})`;
+      }
+      if(viewSwitchEl){ viewSwitchEl.style.display='flex'; viewSwitchEl.querySelectorAll('.load3d-view-btn').forEach(b=>b.classList.remove('active')); viewSwitchEl.querySelector('.load3d-view-btn[data-view="scaled"]').classList.add('active'); }
+      const showingLab=document.getElementById('load3dShowingLabel');
+      if(showingLab){ showingLab.textContent=load3dResultWrap.dataset.scaledDims?'Currently showing: Scaled ('+load3dResultWrap.dataset.scaledDims+')':'Currently showing: Scaled model'; showingLab.style.display='block'; }
+      const cameraHint=document.getElementById('load3dCameraHint');
+      if(cameraHint) cameraHint.style.display='block';
+    }
+    const dlRow=document.getElementById('load3dDlRow');
+    if(isScaled&&resp.scaled_model_url){
+      const origLink=load3dOriginalBlobUrl?`<a class="dl-btn" style="background:var(--bg);border-color:var(--border);color:var(--ink3)" href="${esc(load3dOriginalBlobUrl)}" download="${esc(file.name)}">↓ Original</a>`:'';
+      dlRow.innerHTML=`<a class="dl-btn" href="${esc(resp.scaled_model_url)}" download>↓ Download scaled GLB</a>${origLink}`;
+    }else if(load3dOriginalBlobUrl||resp.model_url){
+      dlRow.innerHTML=`<a class="dl-btn" href="${esc(load3dOriginalBlobUrl||resp.model_url)}" download="${esc(file.name||'model.glb')}">↓ Download</a>`;
+    }else{
+      dlRow.innerHTML='';
+    }
+    ok('load3dStatus',isScaled?'Scaled/resized successfully':'Loaded successfully');
+  }catch(e){
+    const msg=e&&e.message?e.message:String(e);
+    const isAbort=msg.indexOf('abort')>=0;
+    err('load3dStatus',isAbort?'Request timed out (try a smaller file or try again).':'Failed to fetch — ensure the backend is running and try again (cd backend && python app.py).');
+  }
+  btnLoad3d.disabled=false;
 });
 </script>
 </body>

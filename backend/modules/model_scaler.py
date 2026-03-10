@@ -69,10 +69,19 @@ def scale_model(
             "requested axes."
         )
 
-    avg = sum(provided.values()) / len(provided)
-    sx = provided.get("x", avg)
-    sy = provided.get("y", avg)
-    sz = provided.get("z", avg)
+    num_provided = len(provided)
+    if num_provided == 1:
+        # Scale: one factor for all axes — maintains proportions (no skew)
+        (_, scale_factor) = provided.popitem()
+        sx = sy = sz = scale_factor
+        mode = "scale"
+    else:
+        # Resize: force dimensions — each axis independent; missing axes use average
+        avg = sum(provided.values()) / len(provided)
+        sx = provided.get("x", avg)
+        sy = provided.get("y", avg)
+        sz = provided.get("z", avg)
+        mode = "resize"
 
     scale_matrix = np.diag([sx, sy, sz, 1.0])
     mesh.apply_transform(scale_matrix)
@@ -87,6 +96,7 @@ def scale_model(
         return round(meters / factor, 2)
 
     return {
+        "mode": mode,
         "original": {
             "w": _to_unit(orig_w),
             "h": _to_unit(orig_h),

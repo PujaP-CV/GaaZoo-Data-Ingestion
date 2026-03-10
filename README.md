@@ -102,6 +102,7 @@ Open **http://localhost:5000** in your browser.
 | `/api/convert-item` | Pipeline | Single item → 3D via Meshy |
 | `/api/convert-selected` | Pipeline | Batch pending items → 3D |
 | `/generate-3d` | Viewer | Upload any image → 3D |
+| `/scale-3d` | Viewer | Upload .glb/.obj → scale (1 dim) or resize (2–3 dims) |
 | `/proxy-glb` | Viewer | Proxy Meshy GLB URLs (CORS) |
 | `/api/files/*` | Viewer | Serve local images and GLB files |
 | `/health` | App | Health check |
