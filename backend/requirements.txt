@@ -1,0 +1,19 @@
+# GaaZoo — Unified backend dependencies
+
+# ── Web framework ──────────────────────────────────────────────────────
+flask>=2.0
+flask-cors>=4.0
+python-dotenv>=1.0
+
+# ── Image Pipeline ─────────────────────────────────────────────────────
+requests>=2.28
+neo4j>=5.0
+google-search-results>=2.4
+Pillow>=9.0
+beautifulsoup4>=4.11
+trimesh>=3.23
+numpy>=1.24
+
+# ── DPP (Design Personality Profile) ──────────────────────────────────
+google-generativeai>=0.8
+openpyxl>=3.1

@@ -1,0 +1,3368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GaaZoo — Design Personality Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    /* ── Reset & tokens ─────────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --navy: #1a2e3b;
+      --sand: #c8b49a;
+      --cream: #f5f0e8;
+      --warm: #e8ddd0;
+      --terracotta: #b56b4a;
+      --sage: #7a8c72;
+      --charcoal: #2c3e3a;
+      --muted: #8a9090;
+      --white: #fefefe;
+      --pinterest: #e60023;
+      --spotify: #1DB954;
+
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+
+      --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--cream);
+      color: var(--charcoal);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background texture ─────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(200, 180, 154, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 85% 90%, rgba(122, 140, 114, 0.12) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────── */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    header {
+      padding: 3.5rem 0 2rem;
+      border-bottom: 1px solid rgba(200, 180, 154, 0.4);
+      margin-bottom: 4rem;
+    }
+
+    .logo {
+      font-family: var(--serif);
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: var(--navy);
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .logo span {
+      color: var(--terracotta);
+      font-style: italic;
+    }
+
+    .tagline {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── Step indicator ─────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      gap: 0;
+      margin-bottom: 3.5rem;
+      background: var(--white);
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: 0 1px 20px rgba(26, 46, 59, 0.06);
+    }
+
+    .step {
+      flex: 1;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-right: 1px solid rgba(200, 180, 154, 0.3);
+      transition: background 0.3s var(--ease);
+    }
+
+    .step:last-child {
+      border-right: none;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--warm);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s var(--ease);
+    }
+
+    .step.active .step-num {
+      background: var(--terracotta);
+      color: var(--white);
+    }
+
+    .step.done .step-num {
+      background: var(--sage);
+      color: var(--white);
+    }
+
+    .step-label {
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.3;
+      transition: color 0.3s;
+    }
+
+    .step.active .step-label {
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+
+    .step.done .step-label {
+      color: var(--sage);
+    }
+
+    /* ── Cards ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: 2px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 30px rgba(26, 46, 59, 0.05);
+      transition: box-shadow 0.3s var(--ease);
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 40px rgba(26, 46, 59, 0.09);
+    }
+
+    .card-title {
+      font-family: var(--serif);
+      font-size: 1.7rem;
+      font-weight: 300;
+      color: var(--navy);
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .card-subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Pinterest connect button ───────────────────────────────────── */
+    .btn-pinterest {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--pinterest);
+      color: var(--white);
+      border: none;
+      padding: 0.9rem 2rem;
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s var(--ease);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-pinterest::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0);
+      transition: background 0.25s;
+    }
+
+    .btn-pinterest:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(230, 0, 35, 0.3);
+    }
+
+    .btn-pinterest:hover::before {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .btn-pinterest:active {
+      transform: translateY(0);
+    }
+
+    .btn-pinterest svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* ── Spotify connect button ─────────────────────────────────────── */
+    .btn-spotify {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--spotify);
+      color: var(--white);
+      border: none;
+      padding: 0.9rem 2rem;
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s var(--ease);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-spotify:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(29, 185, 84, 0.35);
+      background: #1ed760;
+      color: var(--white);
+    }
+    .btn-spotify svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* ── Primary button ─────────────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      padding: 0.85rem 1.8rem;
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.25s var(--ease);
+    }
+
+    .btn-primary:hover {
+      background: var(--charcoal);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(26, 46, 59, 0.2);
+    }
+
+    .btn-primary:disabled {
+      background: var(--warm);
+      color: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Secondary button ───────────────────────────────────────────── */
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: transparent;
+      color: var(--charcoal);
+      border: 1px solid rgba(200, 180, 154, 0.6);
+      padding: 0.8rem 1.6rem;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 400;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.25s var(--ease);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--sand);
+      background: var(--warm);
+    }
+
+    /* ── Status badge ───────────────────────────────────────────────── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    .status-badge.connected {
+      background: rgba(122, 140, 114, 0.15);
+      color: var(--sage);
+    }
+
+    .status-badge.disconnected {
+      background: rgba(200, 180, 154, 0.2);
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-dot.pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    /* ── Profile display ────────────────────────────────────────────── */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      margin: 1.5rem 0;
+    }
+
+    .profile-cell {
+      padding: 1.2rem;
+      background: var(--cream);
+      border-radius: 2px;
+    }
+
+    .cell-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .cell-value {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      color: var(--navy);
+      font-weight: 400;
+      line-height: 1.3;
+    }
+
+    .cell-weight {
+      font-size: 0.78rem;
+      color: var(--terracotta);
+      font-weight: 500;
+      margin-top: 0.2rem;
+    }
+
+    .material-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+
+    .tag {
+      padding: 0.25rem 0.7rem;
+      background: var(--warm);
+      color: var(--charcoal);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 400;
+    }
+
+    /* ── Board thumbnails ───────────────────────────────────────────── */
+    .boards-row {
+      display: flex;
+      gap: 0.8rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .board-thumb {
+      flex-shrink: 0;
+      width: 100px;
+      text-align: center;
+    }
+
+    .board-img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 2px;
+      background: var(--warm);
+      display: block;
+    }
+
+    .board-name {
+      margin-top: 0.4rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── AI section ─────────────────────────────────────────────────── */
+    .ai-result {
+      background: var(--cream);
+      border-left: 3px solid var(--sand);
+      padding: 1.5rem;
+      border-radius: 0 2px 2px 0;
+      font-size: 0.9rem;
+      line-height: 1.75;
+      color: var(--charcoal);
+      white-space: pre-wrap;
+      margin: 1.5rem 0;
+      font-family: var(--sans);
+      min-height: 60px;
+    }
+
+    .ai-result.empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .room-select {
+      padding: 0.6rem 1rem;
+      border: 1px solid rgba(200, 180, 154, 0.6);
+      border-radius: 2px;
+      background: var(--white);
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      color: var(--charcoal);
+      outline: none;
+      cursor: pointer;
+      margin-right: 0.75rem;
+    }
+
+    .room-select:focus {
+      border-color: var(--sand);
+    }
+
+    /* ── Ask input ──────────────────────────────────────────────────── */
+    .ask-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .ask-input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(200, 180, 154, 0.6);
+      border-radius: 2px;
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      background: var(--cream);
+      color: var(--charcoal);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .ask-input:focus {
+      border-color: var(--sand);
+      background: var(--white);
+    }
+
+    .ask-input::placeholder {
+      color: var(--muted);
+    }
+
+    /* ── Loading spinner ────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .spinner.dark {
+      border-color: rgba(26, 46, 59, 0.2);
+      border-top-color: var(--navy);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Hidden / visible ───────────────────────────────────────────── */
+    .hidden {
+      display: none !important;
+    }
+
+    /* ── Toast notification ─────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 0.9rem 1.5rem;
+      background: var(--navy);
+      color: var(--white);
+      font-size: 0.82rem;
+      border-radius: 2px;
+      box-shadow: 0 8px 30px rgba(26, 46, 59, 0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s var(--ease);
+      z-index: 1000;
+      max-width: 320px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error {
+      background: var(--terracotta);
+    }
+
+    /* ── Divider ────────────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: rgba(200, 180, 154, 0.3);
+      margin: 2rem 0;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 3rem 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      border-top: 1px solid rgba(200, 180, 154, 0.25);
+      margin-top: 3rem;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .steps {
+        flex-direction: column;
+      }
+
+      .step {
+        border-right: none;
+        border-bottom: 1px solid rgba(200, 180, 154, 0.3);
+      }
+
+      .card {
+        padding: 1.5rem;
+      }
+
+      .ask-row {
+        flex-direction: column;
+      }
+    }
+
+    /* ── Question card ───────────────────────────────────────────────── */
+    .question-item {
+      display: flex;
+      gap: 1.2rem;
+      padding: 1.4rem 0;
+      border-bottom: 1px solid rgba(200, 180, 154, 0.25);
+      align-items: flex-start;
+    }
+
+    .question-item:last-child {
+      border-bottom: none;
+    }
+
+    .question-thumb {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: var(--warm);
+    }
+
+    .question-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .question-text {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--navy);
+      margin-bottom: 0.7rem;
+      line-height: 1.4;
+    }
+
+    .question-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .q-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: var(--charcoal);
+      cursor: pointer;
+    }
+
+    .q-option input[type="checkbox"] {
+      accent-color: var(--terracotta);
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .q-other-input {
+      margin-top: 0.5rem;
+      width: 100%;
+      padding: 0.4rem 0.7rem;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      border: 1px solid rgba(200, 180, 154, 0.5);
+      border-radius: 2px;
+      background: var(--cream);
+      color: var(--charcoal);
+      box-sizing: border-box;
+    }
+
+    .q-other-input:focus {
+      outline: none;
+      border-color: var(--terracotta);
+    }
+
+    .q-dimension-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--sage);
+      border: 1px solid var(--sage);
+      border-radius: 20px;
+      padding: 0.1rem 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── DNA Slider card ─────────────────────────────────────────── */
+    .dna-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(200, 180, 154, 0.3);
+      margin-bottom: 1.4rem;
+    }
+
+    .dna-tab {
+      padding: 0.5rem 1.2rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--muted);
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+
+    .dna-tab.active {
+      border-bottom-color: var(--terracotta);
+      color: var(--terracotta);
+      font-weight: 500;
+    }
+
+    .dna-panel {
+      display: none;
+    }
+
+    .dna-panel.active {
+      display: block;
+    }
+
+    .dna-slider-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 110px;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(200, 180, 154, 0.15);
+    }
+
+    .dna-slider-row:last-child {
+      border-bottom: none;
+    }
+
+    .slider-label-left {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.3;
+    }
+
+    .slider-label-right {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: left;
+      line-height: 1.3;
+    }
+
+    .slider-track {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .slider-track input[type=range] {
+      width: 100%;
+      accent-color: var(--terracotta);
+      cursor: pointer;
+      height: 4px;
+    }
+
+    .slider-val {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--terracotta);
+      background: rgba(181, 107, 74, 0.08);
+      padding: 0.1rem 0.5rem;
+      border-radius: 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .ai-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--sage);
+      border: 1px solid var(--sage);
+      border-radius: 10px;
+      padding: 0.05rem 0.4rem;
+      margin-left: 0.3rem;
+      vertical-align: middle;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <header>
+      <div class="logo">Gaa<span>Zoo</span></div>
+      <p class="tagline">AI-Driven Interior Design · Design Personality Profile</p>
+    </header>
+
+    <!-- ── Step indicator ─────────────────────────────────────────── -->
+    <div class="steps" id="steps">
+      <div class="step active" data-step="1">
+        <div class="step-num">1</div>
+        <div class="step-label">Connect<br>Pinterest</div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-num">2</div>
+        <div class="step-label">Build<br>Profile</div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-num">3</div>
+        <div class="step-label">AI Design<br>Suggestions</div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Connect Pinterest ──────────────────────────────── -->
+    <!-- ── STEP 1: Connect Pinterest ──────────────────────────────── -->
+    <div class="card" id="card-connect">
+      <h2 class="card-title">Connect your Pinterest</h2>
+      <p class="card-subtitle">We'll analyse your boards to understand your aesthetic — no posts, no follows, read-only
+        access.</p>
+
+      <div id="connect-area">
+        <!-- 3 connection tabs -->
+        <div
+          style="display:flex; gap:0; margin-bottom:1.5rem; border-bottom:1px solid rgba(200,180,154,0.4); flex-wrap:wrap;">
+          <button onclick="switchTab('token')" id="tab-token"
+            style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid var(--terracotta); font-family:var(--sans); font-size:0.8rem; font-weight:500; color:var(--terracotta); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+            🔑 Direct Token
+          </button>
+          <button onclick="switchTab('oauth')" id="tab-oauth"
+            style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid transparent; font-family:var(--sans); font-size:0.8rem; font-weight:400; color:var(--muted); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+            🔐 OAuth Flow
+          </button>
+          <button onclick="switchTab('images')" id="tab-images"
+            style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid transparent; font-family:var(--sans); font-size:0.8rem; font-weight:400; color:var(--muted); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+            🖼 Upload Images <span
+              style="font-size:0.65rem; background:var(--sage); color:white; padding:0.1rem 0.4rem; border-radius:8px; margin-left:0.2rem;">Works
+              now</span>
+          </button>
+          <button onclick="switchTab('spotify')" id="tab-spotify"
+            style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid transparent; font-family:var(--sans); font-size:0.8rem; font-weight:400; color:var(--muted); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+            🎵 Connect with Spotify
+          </button>
+        </div>
+
+        <!-- Direct Token panel -->
+        <div id="panel-token">
+          <div
+            style="background:var(--cream); border-left:3px solid var(--terracotta); padding:1rem 1.2rem; margin-bottom:1.2rem; border-radius:0 2px 2px 0;">
+            <p style="font-size:0.82rem; font-weight:500; color:var(--charcoal); margin-bottom:0.4rem;">How to get your
+              token:</p>
+            <p style="font-size:0.79rem; color:var(--muted); line-height:1.7;">
+              1. Go to <strong>developers.pinterest.com/apps</strong><br>
+              2. Open your app → scroll to <strong>"Generate Access Tokens"</strong><br>
+              3. Select environment → click <strong>"Generate token"</strong><br>
+              4. <strong>Copy immediately</strong> (only shown once) and paste below
+            </p>
+            <p style="font-size:0.75rem; color:var(--terracotta); margin-top:0.5rem; font-weight:500;">
+              ⚠ Token needs scopes: boards:read, pins:read, user_accounts:read
+            </p>
+          </div>
+          <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <input type="password" id="token-input" class="ask-input" placeholder="Paste Pinterest access token…"
+              style="flex:1; min-width:200px;" onkeydown="if(event.key==='Enter') connectWithToken()" />
+            <button class="btn-pinterest" id="btn-token-connect" onclick="connectWithToken()">
+              <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;">
+                <path
+                  d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" />
+              </svg>
+              Connect
+            </button>
+          </div>
+        </div>
+
+        <!-- OAuth panel -->
+        <div id="panel-oauth" class="hidden">
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.65;">
+            Full OAuth — any user can connect their Pinterest.<br>
+            <strong>Requires Pinterest Standard Access approval</strong> (1–5 business days after submitting from your
+            developer dashboard).
+          </p>
+          <a href="#" class="btn-pinterest" onclick="connectPinterest(event)">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;">
+              <path
+                d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" />
+            </svg>
+            Connect with Pinterest
+          </a>
+        </div>
+
+        <!-- Connect with Spotify panel -->
+        <div id="panel-spotify" class="hidden">
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem; line-height:1.65;">
+            Connect your Spotify developer account to link your music taste with your design profile.
+          </p>
+          <div id="spotify-connect-area">
+            <a href="#" class="btn-spotify" onclick="connectSpotify(event)">
+              <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;">
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.721 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+              </svg>
+              Connect with Spotify
+            </a>
+          </div>
+          <div id="spotify-connected-message" class="hidden" style="margin-top:1rem; padding:1rem 1.2rem; background:rgba(29,185,84,0.1); border-left:3px solid var(--spotify); border-radius:0 2px 2px 0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+              <span class="status-badge connected"><span class="status-dot pulse"></span> Connected to Spotify</span>
+              <button type="button" class="btn-secondary" onclick="disconnectSpotify()">Disconnect</button>
+            </div>
+            <p class="spotify-playlists-caption" style="font-size:0.82rem; color:var(--charcoal); margin-top:1rem; margin-bottom:0.6rem;">Select playlists to build your design profile (sample data):</p>
+            <div id="spotify-playlists-list" style="display:flex; flex-wrap:wrap; gap:0.6rem; background:var(--white); padding:0.8rem; border-radius:4px; box-shadow:0 1px 8px rgba(26,46,59,0.04); margin-bottom:0.8rem;">
+              Loading playlists…
+            </div>
+            <button type="button" class="btn-primary" id="btn-spotify-build" onclick="analyseSpotify()">Build profile from selected playlists</button>
+          </div>
+        </div>
+
+        <!-- Image Upload panel -->
+        <div id="panel-images" class="hidden">
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem; line-height:1.65;">
+            Upload 3–10 photos of rooms, interiors, or design styles you love.<br>
+            Gemini Vision analyses them and builds your profile. <strong>No Pinterest account needed.</strong>
+          </p>
+          <div id="drop-zone" style="border:2px dashed rgba(200,180,154,0.6); border-radius:2px; padding:2.2rem 1.5rem;
+              text-align:center; cursor:pointer; transition:border-color 0.2s; background:var(--cream);"
+            onclick="document.getElementById('img-input').click()"
+            ondragover="event.preventDefault(); this.style.borderColor='var(--terracotta)'"
+            ondragleave="this.style.borderColor='rgba(200,180,154,0.6)'" ondrop="handleDrop(event)">
+            <div style="font-size:2.2rem; margin-bottom:0.5rem;">🖼</div>
+            <p style="font-size:0.88rem; font-weight:500; color:var(--charcoal); margin-bottom:0.3rem;">Drop images here
+              or click to browse</p>
+            <p style="font-size:0.75rem; color:var(--muted);">JPG, PNG, WEBP · Max 5MB each · Up to 10 images</p>
+            <input type="file" id="img-input" multiple accept="image/*" style="display:none"
+              onchange="handleFileSelect(event)" />
+          </div>
+          <div id="img-preview-row" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;"></div>
+          <div style="margin-top:1rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            <button class="btn-primary" id="btn-analyse-images" onclick="analyseImages()" disabled>Analyse
+              images</button>
+            <span id="img-count" style="font-size:0.8rem; color:var(--muted);"></span>
+          </div>
+        </div>
+
+      </div><!-- /connect-area -->
+
+      <div id="connected-area" class="hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <span class="status-badge connected"><span class="status-dot pulse"></span> Pinterest Connected</span>
+            <p id="connected-username" style="margin-top:0.6rem; font-size:0.83rem; color:var(--muted);">Boards ready to
+              analyse.</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.8rem;">
+            <button class="btn-secondary" onclick="disconnectPinterest()">Disconnect</button>
+          </div>
+        </div>
+
+        <!-- Boards selection UI -->
+        <div style="margin-top:1rem;">
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:0.6rem;">Select boards to analyse (up to 4
+            images per board):</p>
+          <div id="boards-list" style="display:flex; flex-wrap:wrap; gap:0.6rem;
+            background:var(--white); padding:0.8rem; border-radius:4px; box-shadow:0 1px 8px rgba(26,46,59,0.04);">
+            <!-- Boards will be rendered here -->
+            Loading boards…
+          </div>
+          <div style="margin-top:0.8rem; display:flex; gap:0.6rem;">
+            <button class="btn-primary" id="btn-build-selected" onclick="analyseBoards()">Build profile from selected
+              boards</button>
+            <button class="btn-secondary" onclick="fetchBoards()">Refresh boards</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Question Card (between Step 1 and Step 2) ─────────────────── -->
+    <div class="card hidden" id="card-questions">
+      <h2 class="card-title" id="card-questions-title">What caught your eye?</h2>
+      <p class="card-subtitle" id="card-questions-subtitle">Select everything that resonated with you — the more you tell us, the more accurate your
+        design profile will be.</p>
+      <div id="questions-list"></div>
+    </div>
+
+    <!-- ── Material / Shape DNA Slider Card ──────────────────────────── -->
+    <div class="card hidden" id="card-sliders">
+      <h2 class="card-title" id="card-sliders-title">Fine-tune your material DNA</h2>
+      <p class="card-subtitle" id="card-sliders-subtitle">AI has predicted these scores from your images. Drag to adjust — your final values will
+        sharpen your design profile.</p>
+
+      <!-- Pinterest/Images: Material + Shape DNA -->
+      <div id="dna-panels-pinterest">
+        <div class="dna-tabs">
+          <button class="dna-tab active" onclick="switchDnaTab('material', this)">🪵 Material DNA</button>
+          <button class="dna-tab" onclick="switchDnaTab('shape', this)">🔲 Shape DNA</button>
+        </div>
+
+      <!-- Material DNA panel -->
+      <div class="dna-panel active" id="dna-panel-material">
+        <div class="dna-slider-row"><span class="slider-label-left">Natural</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-natural_industrial"
+              oninput="updateSliderVal(this,'sv-natural_industrial')" /><span class="slider-val"
+              id="sv-natural_industrial">0.50</span></div><span class="slider-label-right">Industrial</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Matte</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-matte_glossy"
+              oninput="updateSliderVal(this,'sv-matte_glossy')" /><span class="slider-val"
+              id="sv-matte_glossy">0.50</span></div><span class="slider-label-right">Glossy</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Warm</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-warm_cool"
+              oninput="updateSliderVal(this,'sv-warm_cool')" /><span class="slider-val" id="sv-warm_cool">0.50</span>
+          </div><span class="slider-label-right">Cool</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Soft</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-soft_hard"
+              oninput="updateSliderVal(this,'sv-soft_hard')" /><span class="slider-val" id="sv-soft_hard">0.50</span>
+          </div><span class="slider-label-right">Hard</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Minimal</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-minimal_layered"
+              oninput="updateSliderVal(this,'sv-minimal_layered')" /><span class="slider-val"
+              id="sv-minimal_layered">0.50</span></div><span class="slider-label-right">Layered</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Rustic</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-rustic_refined"
+              oninput="updateSliderVal(this,'sv-rustic_refined')" /><span class="slider-val"
+              id="sv-rustic_refined">0.50</span></div><span class="slider-label-right">Refined</span>
+        </div>
+      </div>
+
+      <!-- Shape DNA panel -->
+      <div class="dna-panel" id="dna-panel-shape">
+        <div class="dna-slider-row"><span class="slider-label-left">Light Wood</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-light_dark_wood"
+              oninput="updateSliderVal(this,'sv-light_dark_wood')" /><span class="slider-val"
+              id="sv-light_dark_wood">0.50</span></div><span class="slider-label-right">Dark Wood</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Smooth</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-smooth_textured"
+              oninput="updateSliderVal(this,'sv-smooth_textured')" /><span class="slider-val"
+              id="sv-smooth_textured">0.50</span></div><span class="slider-label-right">Textured</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Low Contrast</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-low_high_contrast"
+              oninput="updateSliderVal(this,'sv-low_high_contrast')" /><span class="slider-val"
+              id="sv-low_high_contrast">0.50</span></div><span class="slider-label-right">High Contrast</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Precision</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-precision_handcrafted"
+              oninput="updateSliderVal(this,'sv-precision_handcrafted')" /><span class="slider-val"
+              id="sv-precision_handcrafted">0.50</span></div><span class="slider-label-right">Handcrafted</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Uniform</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-uniform_patterned"
+              oninput="updateSliderVal(this,'sv-uniform_patterned')" /><span class="slider-val"
+              id="sv-uniform_patterned">0.50</span></div><span class="slider-label-right">Patterned</span>
+        </div>
+        <div class="dna-slider-row"><span class="slider-label-left">Flat Finish</span>
+          <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-flat_deep_finish"
+              oninput="updateSliderVal(this,'sv-flat_deep_finish')" /><span class="slider-val"
+              id="sv-flat_deep_finish">0.50</span></div><span class="slider-label-right">Deep Finish</span>
+        </div>
+      </div>
+      </div>
+
+      <!-- Spotify: Material DNA (6) + Shape DNA (6) - Template 23 keys -->
+      <div id="dna-panels-spotify" class="hidden">
+        <div class="dna-tabs">
+          <button class="dna-tab active" onclick="switchDnaTab('spotify-material', this)">Material DNA</button>
+          <button class="dna-tab" onclick="switchDnaTab('spotify-shape', this)">Shape DNA</button>
+        </div>
+        <div class="dna-panel active" id="dna-panel-spotify-material">
+          <div class="dna-slider-row"><span class="slider-label-left">Calm</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-energy_calm_energetic"
+                oninput="updateSliderVal(this,'sv-s-energy_calm_energetic')" /><span class="slider-val"
+                id="sv-s-energy_calm_energetic">0.50</span></div><span class="slider-label-right">Energetic</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Sad</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-mood_sad_happy"
+                oninput="updateSliderVal(this,'sv-s-mood_sad_happy')" /><span class="slider-val"
+                id="sv-s-mood_sad_happy">0.50</span></div><span class="slider-label-right">Happy</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Acoustic</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-acoustic_electronic"
+                oninput="updateSliderVal(this,'sv-s-acoustic_electronic')" /><span class="slider-val"
+                id="sv-s-acoustic_electronic">0.50</span></div><span class="slider-label-right">Electronic</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Retro</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-retro_modern"
+                oninput="updateSliderVal(this,'sv-s-retro_modern')" /><span class="slider-val"
+                id="sv-s-retro_modern">0.50</span></div><span class="slider-label-right">Modern</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Instrumental</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-instrumental_vocal"
+                oninput="updateSliderVal(this,'sv-s-instrumental_vocal')" /><span class="slider-val"
+                id="sv-s-instrumental_vocal">0.50</span></div><span class="slider-label-right">Vocal</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Indie</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-indie_mainstream"
+                oninput="updateSliderVal(this,'sv-s-indie_mainstream')" /><span class="slider-val"
+                id="sv-s-indie_mainstream">0.50</span></div><span class="slider-label-right">Mainstream</span>
+          </div>
+        </div>
+        <div class="dna-panel" id="dna-panel-spotify-shape">
+          <div class="dna-slider-row"><span class="slider-label-left">Light</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-light_heavy"
+                oninput="updateSliderVal(this,'sv-s-light_heavy')" /><span class="slider-val"
+                id="sv-s-light_heavy">0.50</span></div><span class="slider-label-right">Heavy</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Smooth</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-smooth_raw"
+                oninput="updateSliderVal(this,'sv-s-smooth_raw')" /><span class="slider-val"
+                id="sv-s-smooth_raw">0.50</span></div><span class="slider-label-right">Raw</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Balanced</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-balanced_dynamic"
+                oninput="updateSliderVal(this,'sv-s-balanced_dynamic')" /><span class="slider-val"
+                id="sv-s-balanced_dynamic">0.50</span></div><span class="slider-label-right">Dynamic</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Polished</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-polished_organic"
+                oninput="updateSliderVal(this,'sv-s-polished_organic')" /><span class="slider-val"
+                id="sv-s-polished_organic">0.50</span></div><span class="slider-label-right">Organic</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Simple</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-simple_complex"
+                oninput="updateSliderVal(this,'sv-s-simple_complex')" /><span class="slider-val"
+                id="sv-s-simple_complex">0.50</span></div><span class="slider-label-right">Complex</span>
+          </div>
+          <div class="dna-slider-row"><span class="slider-label-left">Minimal</span>
+            <div class="slider-track"><input type="range" min="0" max="100" value="50" id="sl-s-minimal_layered"
+                oninput="updateSliderVal(this,'sv-s-minimal_layered')" /><span class="slider-val"
+                id="sv-s-minimal_layered">0.50</span></div><span class="slider-label-right">Layered</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.8rem; display:flex; justify-content:flex-end; gap:0.8rem; flex-wrap:wrap;">
+        <button class="btn-secondary" id="btn-skip-questions" onclick="skipQuestions()">Skip — build without
+          answers</button>
+        <button class="btn-primary" id="btn-submit-questions" onclick="submitAnswers()">Build my profile →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Build Profile ──────────────────────────────────────── -->
+    <div class="card hidden" id="card-profile">
+      <h2 class="card-title" id="card-profile-title">Build your Design Profile</h2>
+      <p class="card-subtitle" id="card-profile-subtitle">GaaZoo will scan your connected Pinterest boards and identify your aesthetic signature.</p>
+      <div id="build-area">
+        <button class="btn-primary" id="btn-build" onclick="buildProfile()">Analyse my Pinterest boards</button>
+      </div>
+      <div id="profile-result" class="hidden">
+        <div class="divider"></div>
+
+        <!-- Header row -->
+        <div
+          style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.6rem; flex-wrap:wrap; gap:0.8rem;">
+          <h3 style="font-family:var(--serif); font-size:1.3rem; font-weight:300; color:var(--navy);" id="profile-identity-heading">Your Design Identity</h3>
+          <span id="confidence-badge" class="status-badge connected"></span>
+        </div>
+        <p class="cell-label" id="profile-identity-subtitle" style="margin-top:-1rem; margin-bottom:1rem; display:none;"></p>
+        <!-- ── DIMENSION 1: Identity ─────────────────────── -->
+        <div class="profile-grid" id="profile-grid"></div>
+
+        <!-- ── Mood from your music (Spotify only) ───────── -->
+        <div class="mood-from-music-section" id="mood-from-music-section" style="display:none; margin-top:1.2rem; padding:1rem; background:rgba(29,185,84,0.06); border-radius:6px; border-left:3px solid var(--spotify);">
+          <p class="cell-label" style="margin-bottom:0.6rem; color:var(--navy);">MOOD FROM YOUR MUSIC</p>
+          <div class="mood-from-music-content" style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;"></div>
+        </div>
+
+        <!-- ── DIMENSION 2: Colour Palette ──────────────── -->
+        <div style="margin-top:1.4rem;">
+          <p class="cell-label" style="margin-bottom:0.7rem;">COLOUR PALETTE</p>
+          <div id="colour-swatches" style="display:flex; gap:0.7rem; flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- ── DIMENSION 3+4: Materials & Finish ─────────── -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
+          <div class="profile-cell">
+            <p class="cell-label">MATERIALS</p>
+            <div id="materials-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem;"></div>
+          </div>
+          <div class="profile-cell">
+            <p class="cell-label">FINISH PREFERENCE</p>
+            <div id="finish-display" style="margin-top:0.5rem;"></div>
+          </div>
+        </div>
+
+        <!-- ── DIMENSION 5+6: Pattern & Permanence ───────── -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+          <div class="profile-cell">
+            <p class="cell-label">PATTERN TOLERANCE</p>
+            <div id="pattern-display" style="margin-top:0.5rem;"></div>
+          </div>
+          <div class="profile-cell">
+            <p class="cell-label">FURNITURE TYPE</p>
+            <div id="permanence-display" style="margin-top:0.5rem;"></div>
+          </div>
+        </div>
+
+        <!-- ── Sources ────────────────────────────────────── -->
+        <p class="cell-label" style="margin-top:1.5rem; margin-bottom:0.6rem;" id="source-label">SOURCES ANALYSED</p>
+        <div class="boards-row" id="boards-row"></div>
+
+        <!-- ── AI Prompt / Summary ───────────────────────── -->
+        <p class="cell-label" id="ai-prompt-label" style="margin-top:1.2rem; margin-bottom:0.6rem;">AI PROMPT (human readable)</p>
+        <div id="prompt-injection" class="ai-result empty">No AI prompt available.</div>
+
+        <!-- ── Developer JSON view ───────────────────────── -->
+        <details style="margin-top:1.2rem;">
+          <summary
+            style="font-size:0.78rem; color:var(--muted); cursor:pointer; letter-spacing:0.04em; text-transform:uppercase;">
+            Full DPP JSON (developer view)</summary>
+          <pre id="dpp-json"
+            style="display:block; margin-top:0.8rem; padding:1rem; background:var(--cream); font-size:0.72rem; line-height:1.55; border-radius:2px; color:var(--charcoal); overflow-x:auto; white-space:pre-wrap; word-break:break-word;"></pre>
+        </details>
+      </div>tml>
+      <html lang="en">
+
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GaaZoo — Design Personality Profile</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+          rel="stylesheet" />
+
+        <style>
+          /* ── Reset & tokens ─────────────────────────────────────────────── */
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+
+          :root {
+            --navy: #1a2e3b;
+            --sand: #c8b49a;
+            --cream: #f5f0e8;
+            --warm: #e8ddd0;
+            --terracotta: #b56b4a;
+            --sage: #7a8c72;
+            --charcoal: #2c3e3a;
+            --muted: #8a9090;
+            --white: #fefefe;
+            --pinterest: #e60023;
+            --spotify: #1DB954;
+
+            --serif: 'Cormorant Garamond', Georgia, serif;
+            --sans: 'DM Sans', system-ui, sans-serif;
+
+            --ease: cubic-bezier(0.23, 1, 0.32, 1);
+          }
+
+          html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+          }
+
+          body {
+            font-family: var(--sans);
+            background: var(--cream);
+            color: var(--charcoal);
+            min-height: 100vh;
+            overflow-x: hidden;
+          }
+
+          /* ── Background texture ─────────────────────────────────────────── */
+          body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+              radial-gradient(ellipse 80% 60% at 20% 10%, rgba(200, 180, 154, 0.18) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 85% 90%, rgba(122, 140, 114, 0.12) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+          }
+
+          /* ── Layout ─────────────────────────────────────────────────────── */
+          .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem;
+          }
+
+          /* ── Header ─────────────────────────────────────────────────────── */
+          header {
+            padding: 3.5rem 0 2rem;
+            border-bottom: 1px solid rgba(200, 180, 154, 0.4);
+            margin-bottom: 4rem;
+          }
+
+          .logo {
+            font-family: var(--serif);
+            font-size: 2.8rem;
+            font-weight: 300;
+            color: var(--navy);
+            letter-spacing: 0.05em;
+            line-height: 1;
+          }
+
+          .logo span {
+            color: var(--terracotta);
+            font-style: italic;
+          }
+
+          .tagline {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: var(--muted);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+          }
+
+          /* ── Step indicator ─────────────────────────────────────────────── */
+          .steps {
+            display: flex;
+            gap: 0;
+            margin-bottom: 3.5rem;
+            background: var(--white);
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 1px 20px rgba(26, 46, 59, 0.06);
+          }
+
+          .step {
+            flex: 1;
+            padding: 1rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-right: 1px solid rgba(200, 180, 154, 0.3);
+            transition: background 0.3s var(--ease);
+          }
+
+          .step:last-child {
+            border-right: none;
+          }
+
+          .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--warm);
+            color: var(--muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s var(--ease);
+          }
+
+          .step.active .step-num {
+            background: var(--terracotta);
+            color: var(--white);
+          }
+
+          .step.done .step-num {
+            background: var(--sage);
+            color: var(--white);
+          }
+
+          .step-label {
+            font-size: 0.78rem;
+            font-weight: 400;
+            color: var(--muted);
+            line-height: 1.3;
+            transition: color 0.3s;
+          }
+
+          .step.active .step-label {
+            color: var(--charcoal);
+            font-weight: 500;
+          }
+
+          .step.done .step-label {
+            color: var(--sage);
+          }
+
+          /* ── Cards ──────────────────────────────────────────────────────── */
+          .card {
+            background: var(--white);
+            border-radius: 2px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 30px rgba(26, 46, 59, 0.05);
+            transition: box-shadow 0.3s var(--ease);
+          }
+
+          .card:hover {
+            box-shadow: 0 4px 40px rgba(26, 46, 59, 0.09);
+          }
+
+          .card-title {
+            font-family: var(--serif);
+            font-size: 1.7rem;
+            font-weight: 300;
+            color: var(--navy);
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+          }
+
+          .card-subtitle {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+            font-weight: 300;
+            letter-spacing: 0.04em;
+          }
+
+          /* ── Pinterest connect button ───────────────────────────────────── */
+          .btn-pinterest {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--pinterest);
+            color: var(--white);
+            border: none;
+            padding: 0.9rem 2rem;
+            font-family: var(--sans);
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            border-radius: 2px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s var(--ease);
+            position: relative;
+            overflow: hidden;
+          }
+
+          .btn-pinterest::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0);
+            transition: background 0.25s;
+          }
+
+          .btn-pinterest:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(230, 0, 35, 0.3);
+          }
+
+          .btn-pinterest:hover::before {
+            background: rgba(0, 0, 0, 0.08);
+          }
+
+          .btn-pinterest:active {
+            transform: translateY(0);
+          }
+
+          .btn-pinterest svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+          }
+
+          /* ── Spotify connect button ─────────────────────────────────────── */
+          .btn-spotify {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--spotify);
+            color: var(--white);
+            border: none;
+            padding: 0.9rem 2rem;
+            font-family: var(--sans);
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            border-radius: 2px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s var(--ease);
+          }
+          .btn-spotify:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.35);
+            background: #1ed760;
+            color: var(--white);
+          }
+          .btn-spotify svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+          }
+
+          /* ── Primary button ─────────────────────────────────────────────── */
+          .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--navy);
+            color: var(--white);
+            border: none;
+            padding: 0.85rem 1.8rem;
+            font-family: var(--sans);
+            font-size: 0.88rem;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.25s var(--ease);
+          }
+
+          .btn-primary:hover {
+            background: var(--charcoal);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(26, 46, 59, 0.2);
+          }
+
+          .btn-primary:disabled {
+            background: var(--warm);
+            color: var(--muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+          }
+
+          /* ── Secondary button ───────────────────────────────────────────── */
+          .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: transparent;
+            color: var(--charcoal);
+            border: 1px solid rgba(200, 180, 154, 0.6);
+            padding: 0.8rem 1.6rem;
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            font-weight: 400;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.25s var(--ease);
+          }
+
+          .btn-secondary:hover {
+            border-color: var(--sand);
+            background: var(--warm);
+          }
+
+          /* ── Status badge ───────────────────────────────────────────────── */
+          .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+          }
+
+          .status-badge.connected {
+            background: rgba(122, 140, 114, 0.15);
+            color: var(--sage);
+          }
+
+          .status-badge.disconnected {
+            background: rgba(200, 180, 154, 0.2);
+            color: var(--muted);
+          }
+
+          .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+          }
+
+          .status-dot.pulse {
+            animation: pulse 2s infinite;
+          }
+
+          @keyframes pulse {
+
+            0%,
+            100% {
+              opacity: 1;
+            }
+
+            50% {
+              opacity: 0.4;
+            }
+          }
+
+          /* ── Profile display ────────────────────────────────────────────── */
+          .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+            margin: 1.5rem 0;
+          }
+
+          .profile-cell {
+            padding: 1.2rem;
+            background: var(--cream);
+            border-radius: 2px;
+          }
+
+          .cell-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+          }
+
+          .cell-value {
+            font-family: var(--serif);
+            font-size: 1.15rem;
+            color: var(--navy);
+            font-weight: 400;
+            line-height: 1.3;
+          }
+
+          .cell-weight {
+            font-size: 0.78rem;
+            color: var(--terracotta);
+            font-weight: 500;
+            margin-top: 0.2rem;
+          }
+
+          .material-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
+          }
+
+          .tag {
+            padding: 0.25rem 0.7rem;
+            background: var(--warm);
+            color: var(--charcoal);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 400;
+          }
+
+          /* ── Board thumbnails ───────────────────────────────────────────── */
+          .boards-row {
+            display: flex;
+            gap: 0.8rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            margin: 1.5rem 0;
+          }
+
+          .board-thumb {
+            flex-shrink: 0;
+            width: 100px;
+            text-align: center;
+          }
+
+          .board-img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 2px;
+            background: var(--warm);
+            display: block;
+          }
+
+          .board-name {
+            margin-top: 0.4rem;
+            font-size: 0.72rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          /* ── AI section ─────────────────────────────────────────────────── */
+          .ai-result {
+            background: var(--cream);
+            border-left: 3px solid var(--sand);
+            padding: 1.5rem;
+            border-radius: 0 2px 2px 0;
+            font-size: 0.9rem;
+            line-height: 1.75;
+            color: var(--charcoal);
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-family: var(--sans);
+            min-height: 60px;
+          }
+
+          .ai-result.empty {
+            color: var(--muted);
+            font-style: italic;
+          }
+
+          .room-select {
+            padding: 0.6rem 1rem;
+            border: 1px solid rgba(200, 180, 154, 0.6);
+            border-radius: 2px;
+            background: var(--white);
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            color: var(--charcoal);
+            outline: none;
+            cursor: pointer;
+            margin-right: 0.75rem;
+          }
+
+          .room-select:focus {
+            border-color: var(--sand);
+          }
+
+          /* ── Ask input ──────────────────────────────────────────────────── */
+          .ask-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+          }
+
+          .ask-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(200, 180, 154, 0.6);
+            border-radius: 2px;
+            font-family: var(--sans);
+            font-size: 0.88rem;
+            background: var(--cream);
+            color: var(--charcoal);
+            outline: none;
+            transition: border-color 0.2s;
+          }
+
+          .ask-input:focus {
+            border-color: var(--sand);
+            background: var(--white);
+          }
+
+          .ask-input::placeholder {
+            color: var(--muted);
+          }
+
+          /* ── Loading spinner ────────────────────────────────────────────── */
+          .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--white);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+          }
+
+          .spinner.dark {
+            border-color: rgba(26, 46, 59, 0.2);
+            border-top-color: var(--navy);
+          }
+
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          /* ── Hidden / visible ───────────────────────────────────────────── */
+          .hidden {
+            display: none !important;
+          }
+
+          /* ── Toast notification ─────────────────────────────────────────── */
+          .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.9rem 1.5rem;
+            background: var(--navy);
+            color: var(--white);
+            font-size: 0.82rem;
+            border-radius: 2px;
+            box-shadow: 0 8px 30px rgba(26, 46, 59, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s var(--ease);
+            z-index: 1000;
+            max-width: 320px;
+          }
+
+          .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+          }
+
+          .toast.error {
+            background: var(--terracotta);
+          }
+
+          /* ── Divider ────────────────────────────────────────────────────── */
+          .divider {
+            height: 1px;
+            background: rgba(200, 180, 154, 0.3);
+            margin: 2rem 0;
+          }
+
+          /* ── Footer ─────────────────────────────────────────────────────── */
+          footer {
+            text-align: center;
+            padding: 3rem 0;
+            color: var(--muted);
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            border-top: 1px solid rgba(200, 180, 154, 0.25);
+            margin-top: 3rem;
+          }
+
+          /* ── Responsive ─────────────────────────────────────────────────── */
+          @media (max-width: 600px) {
+            .profile-grid {
+              grid-template-columns: 1fr;
+            }
+
+            .steps {
+              flex-direction: column;
+            }
+
+            .step {
+              border-right: none;
+              border-bottom: 1px solid rgba(200, 180, 154, 0.3);
+            }
+
+            .card {
+              padding: 1.5rem;
+            }
+
+            .ask-row {
+              flex-direction: column;
+            }
+
+            .dna-slider-row {
+              grid-template-columns: 70px 1fr 70px;
+              gap: 0.5rem;
+            }
+          }
+
+          /* ── DNA Slider card ─────────────────────────────────────────── */
+          .dna-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid rgba(200, 180, 154, 0.3);
+            margin-bottom: 1.4rem;
+          }
+
+          .dna-tab {
+            padding: 0.5rem 1.2rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: var(--sans);
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--muted);
+            cursor: pointer;
+            margin-bottom: -1px;
+            transition: all 0.2s;
+          }
+
+          .dna-tab.active {
+            border-bottom-color: var(--terracotta);
+            color: var(--terracotta);
+            font-weight: 500;
+          }
+
+          .dna-panel {
+            display: none;
+          }
+
+          .dna-panel.active {
+            display: block;
+          }
+
+          .dna-slider-row {
+            display: grid;
+            grid-template-columns: 110px 1fr 110px;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(200, 180, 154, 0.15);
+          }
+
+          .dna-slider-row:last-child {
+            border-bottom: none;
+          }
+
+          .slider-label-left {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: right;
+            line-height: 1.3;
+          }
+
+          .slider-label-right {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: left;
+            line-height: 1.3;
+          }
+
+          .slider-track {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+          }
+
+          .slider-track input[type=range] {
+            width: 100%;
+            accent-color: var(--terracotta);
+            cursor: pointer;
+            height: 4px;
+          }
+
+          .slider-val {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--terracotta);
+            background: rgba(181, 107, 74, 0.08);
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
+            letter-spacing: 0.04em;
+          }
+
+          .ai-badge {
+            display: inline-block;
+            font-size: 0.62rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--sage);
+            border: 1px solid var(--sage);
+            border-radius: 10px;
+            padding: 0.05rem 0.4rem;
+            margin-left: 0.3rem;
+            vertical-align: middle;
+            opacity: 0.8;
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="wrap">
+
+          <!-- ── Header ─────────────────────────────────────────────────── -->
+          <header>
+            <div class="logo">Gaa<span>Zoo</span></div>
+            <p class="tagline">AI-Driven Interior Design · Design Personality Profile</p>
+          </header>
+
+          <!-- ── Step indicator ─────────────────────────────────────────── -->
+          <div class="steps" id="steps">
+            <div class="step active" data-step="1">
+              <div class="step-num">1</div>
+              <div class="step-label">Connect<br>Pinterest</div>
+            </div>
+            <div class="step" data-step="2">
+              <div class="step-num">2</div>
+              <div class="step-label">Build<br>Profile</div>
+            </div>
+            <div class="step" data-step="3">
+              <div class="step-num">3</div>
+              <div class="step-label">AI Design<br>Suggestions</div>
+            </div>
+          </div>
+
+          <!-- ── STEP 1: Connect Pinterest ──────────────────────────────── -->
+          <!-- ── STEP 1: Connect Pinterest ──────────────────────────────── -->
+          <div class="card" id="card-connect">
+            <h2 class="card-title">Connect your Pinterest</h2>
+            <p class="card-subtitle">We'll analyse your boards to understand your aesthetic — no posts, no follows,
+              read-only access.</p>
+
+            <div id="connect-area">
+              <!-- 3 connection tabs -->
+              <div
+                style="display:flex; gap:0; margin-bottom:1.5rem; border-bottom:1px solid rgba(200,180,154,0.4); flex-wrap:wrap;">
+                <button onclick="switchTab('token')" id="tab-token"
+                  style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid var(--terracotta); font-family:var(--sans); font-size:0.8rem; font-weight:500; color:var(--terracotta); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+                  🔑 Direct Token
+                </button>
+                <button onclick="switchTab('oauth')" id="tab-oauth"
+                  style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid transparent; font-family:var(--sans); font-size:0.8rem; font-weight:400; color:var(--muted); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+                  🔐 OAuth Flow
+                </button>
+                <button onclick="switchTab('images')" id="tab-images"
+                  style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid transparent; font-family:var(--sans); font-size:0.8rem; font-weight:400; color:var(--muted); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+                  🖼 Upload Images <span
+                    style="font-size:0.65rem; background:var(--sage); color:white; padding:0.1rem 0.4rem; border-radius:8px; margin-left:0.2rem;">Works
+                    now</span>
+                </button>
+                <button onclick="switchTab('spotify')" id="tab-spotify"
+                  style="padding:0.55rem 1rem; background:none; border:none; border-bottom:2px solid transparent; font-family:var(--sans); font-size:0.8rem; font-weight:400; color:var(--muted); cursor:pointer; margin-bottom:-1px; white-space:nowrap;">
+                  🎵 Connect with Spotify
+                </button>
+              </div>
+
+              <!-- Direct Token panel -->
+              <div id="panel-token">
+                <div
+                  style="background:var(--cream); border-left:3px solid var(--terracotta); padding:1rem 1.2rem; margin-bottom:1.2rem; border-radius:0 2px 2px 0;">
+                  <p style="font-size:0.82rem; font-weight:500; color:var(--charcoal); margin-bottom:0.4rem;">How to get
+                    your token:</p>
+                  <p style="font-size:0.79rem; color:var(--muted); line-height:1.7;">
+                    1. Go to <strong>developers.pinterest.com/apps</strong><br>
+                    2. Open your app → scroll to <strong>"Generate Access Tokens"</strong><br>
+                    3. Select environment → click <strong>"Generate token"</strong><br>
+                    4. <strong>Copy immediately</strong> (only shown once) and paste below
+                  </p>
+                  <p style="font-size:0.75rem; color:var(--terracotta); margin-top:0.5rem; font-weight:500;">
+                    ⚠ Token needs scopes: boards:read, pins:read, user_accounts:read
+                  </p>
+                </div>
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                  <input type="password" id="token-input" class="ask-input" placeholder="Paste Pinterest access token…"
+                    style="flex:1; min-width:200px;" onkeydown="if(event.key==='Enter') connectWithToken()" />
+                  <button class="btn-pinterest" id="btn-token-connect" onclick="connectWithToken()">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;">
+                      <path
+                        d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" />
+                    </svg>
+                    Connect
+                  </button>
+                </div>
+              </div>
+
+              <!-- OAuth panel -->
+              <div id="panel-oauth" class="hidden">
+                <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.65;">
+                  Full OAuth — any user can connect their Pinterest.<br>
+                  <strong>Requires Pinterest Standard Access approval</strong> (1–5 business days after submitting from
+                  your developer dashboard).
+                </p>
+                <a href="#" class="btn-pinterest" onclick="connectPinterest(event)">
+                  <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;">
+                    <path
+                      d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" />
+                  </svg>
+                  Connect with Pinterest
+                </a>
+              </div>
+
+              <!-- Connect with Spotify panel -->
+              <div id="panel-spotify" class="hidden">
+                <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem; line-height:1.65;">
+                  Connect your Spotify developer account to link your music taste with your design profile.
+                </p>
+                <div id="spotify-connect-area">
+                  <a href="#" class="btn-spotify" onclick="connectSpotify(event)">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;">
+                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.721 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                    </svg>
+                    Connect with Spotify
+                  </a>
+                </div>
+                <div id="spotify-connected-message" class="hidden" style="margin-top:1rem; padding:1rem 1.2rem; background:rgba(29,185,84,0.1); border-left:3px solid var(--spotify); border-radius:0 2px 2px 0;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+                    <span class="status-badge connected"><span class="status-dot pulse"></span> Connected to Spotify</span>
+                    <button type="button" class="btn-secondary" onclick="disconnectSpotify()">Disconnect</button>
+                  </div>
+                  <p class="spotify-playlists-caption" style="font-size:0.82rem; color:var(--charcoal); margin-top:1rem; margin-bottom:0.6rem;">Select playlists to build your design profile (sample data):</p>
+                  <div id="spotify-playlists-list" style="display:flex; flex-wrap:wrap; gap:0.6rem; background:var(--white); padding:0.8rem; border-radius:4px; box-shadow:0 1px 8px rgba(26,46,59,0.04); margin-bottom:0.8rem;">
+                    Loading playlists…
+                  </div>
+                  <button type="button" class="btn-primary" id="btn-spotify-build" onclick="analyseSpotify()">Build profile from selected playlists</button>
+                </div>
+              </div>
+
+              <!-- Image Upload panel -->
+              <div id="panel-images" class="hidden">
+                <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem; line-height:1.65;">
+                  Upload 3–10 photos of rooms, interiors, or design styles you love.<br>
+                  Gemini Vision analyses them and builds your profile. <strong>No Pinterest account needed.</strong>
+                </p>
+                <div id="drop-zone" style="border:2px dashed rgba(200,180,154,0.6); border-radius:2px; padding:2.2rem 1.5rem;
+              text-align:center; cursor:pointer; transition:border-color 0.2s; background:var(--cream);"
+                  onclick="document.getElementById('img-input').click()"
+                  ondragover="event.preventDefault(); this.style.borderColor='var(--terracotta)'"
+                  ondragleave="this.style.borderColor='rgba(200,180,154,0.6)'" ondrop="handleDrop(event)">
+                  <div style="font-size:2.2rem; margin-bottom:0.5rem;">🖼</div>
+                  <p style="font-size:0.88rem; font-weight:500; color:var(--charcoal); margin-bottom:0.3rem;">Drop
+                    images here or click to browse</p>
+                  <p style="font-size:0.75rem; color:var(--muted);">JPG, PNG, WEBP · Max 5MB each · Up to 10 images</p>
+                  <input type="file" id="img-input" multiple accept="image/*" style="display:none"
+                    onchange="handleFileSelect(event)" />
+                </div>
+                <div id="img-preview-row" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;"></div>
+                <div style="margin-top:1rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                  <button class="btn-primary" id="btn-analyse-images" onclick="analyseImages()" disabled>Analyse
+                    images</button>
+                  <span id="img-count" style="font-size:0.8rem; color:var(--muted);"></span>
+                </div>
+              </div>
+
+            </div><!-- /connect-area -->
+
+            <div id="connected-area" class="hidden">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+                <div>
+                  <span class="status-badge connected"><span class="status-dot pulse"></span> Pinterest Connected</span>
+                  <p id="connected-username" style="margin-top:0.6rem; font-size:0.83rem; color:var(--muted);">Boards
+                    ready to analyse.</p>
+                </div>
+                <button class="btn-secondary" onclick="disconnectPinterest()">Disconnect</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── STEP 2: Build Profile (Pinterest) ──────────────────────────── -->
+          <div class="card hidden" id="card-profile">
+            <h2 class="card-title" id="card-profile-title">Build your Design Profile</h2>
+            <p class="card-subtitle" id="card-profile-subtitle">GaaZoo will scan your connected Pinterest boards and identify your aesthetic signature.</p>
+            <div id="build-area">
+              <button class="btn-primary" id="btn-build" onclick="buildProfile()">Analyse my Pinterest boards</button>
+            </div>
+            <div id="profile-result" class="hidden">
+              <div class="divider"></div>
+              <div
+                style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem; flex-wrap:wrap; gap:0.8rem;">
+                <h3 style="font-family:var(--serif); font-size:1.3rem; font-weight:300; color:var(--navy);">Your Design
+                  Identity</h3>
+                <span id="confidence-badge" class="status-badge connected"></span>
+              </div>
+
+              <!-- DIM 1: Archetype grid -->
+              <div class="profile-grid" id="profile-grid"></div>
+
+              <!-- Mood from your music (Spotify only) -->
+              <div class="mood-from-music-section" style="display:none; margin-top:1.2rem; padding:1rem; background:rgba(29,185,84,0.06); border-radius:6px; border-left:3px solid var(--spotify);">
+                <p class="cell-label" style="margin-bottom:0.6rem; color:var(--navy);">MOOD FROM YOUR MUSIC</p>
+                <div class="mood-from-music-content" style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;"></div>
+              </div>
+
+              <!-- DIM 2: Colour palette -->
+              <div style="margin-top:1.5rem;">
+                <p class="cell-label" style="margin-bottom:0.7rem;">Colour Palette</p>
+                <div id="colour-swatches" style="display:flex; flex-wrap:wrap; gap:0.8rem;"></div>
+              </div>
+
+              <!-- DIM 3 + 4 side by side -->
+              <div class="profile-grid" style="margin-top:1.2rem;">
+                <div class="profile-cell">
+                  <p class="cell-label">Preferred Materials</p>
+                  <div id="materials-tags" style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.3rem;"></div>
+                </div>
+                <div class="profile-cell">
+                  <p class="cell-label">Finish Preference</p>
+                  <div id="finish-display" style="margin-top:0.3rem;"></div>
+                </div>
+              </div>
+
+              <!-- DIM 5 + 6 side by side -->
+              <div class="profile-grid" style="margin-top:1.2rem;">
+                <div class="profile-cell">
+                  <p class="cell-label">Pattern Tolerance</p>
+                  <div id="pattern-display" style="margin-top:0.3rem;"></div>
+                </div>
+                <div class="profile-cell">
+                  <p class="cell-label">Furniture Permanence</p>
+                  <div id="permanence-display" style="margin-top:0.3rem;"></div>
+                </div>
+              </div>
+
+              <!-- Sources -->
+              <p class="cell-label" style="margin-top:1.5rem; margin-bottom:0.6rem;" id="source-label">Sources Analysed
+              </p>
+              <div class="boards-row" id="boards-row"></div>
+
+              <!-- Developer: full DPP JSON -->
+              <details style="margin-top:1rem;">
+                <summary
+                  style="font-size:0.78rem; color:var(--muted); cursor:pointer; letter-spacing:0.04em; text-transform:uppercase;">
+                  Full DPP JSON (developer view)</summary>
+                <code id="dpp-json"
+                  style="display:block; margin-top:0.8rem; padding:1rem; background:var(--cream); font-size:0.72rem; line-height:1.6; border-radius:2px; color:var(--charcoal); white-space:pre-wrap; word-break:break-word;"></code>
+              </details>
+
+              <!-- CTA to move to Step 3 -->
+              <div style="margin-top:1.8rem; display:flex; justify-content:flex-end;">
+                <button class="btn-primary" onclick="goToAiStep()">Get AI Design Suggestions →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── STEP 3: AI Suggestions ──────────────────────────────────── -->
+          <div class="card hidden" id="card-ai">
+            <h2 class="card-title">AI Design Suggestions</h2>
+            <p class="card-subtitle">Powered by Gemini 2.5 Flash · Personalised to your aesthetic.</p>
+
+            <!-- Narrative -->
+            <div style="margin-bottom:2rem;">
+              <div
+                style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem; flex-wrap:wrap; gap:0.8rem;">
+                <span
+                  style="font-size:0.78rem; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em;">Your
+                  Design Story</span>
+                <button class="btn-secondary" id="btn-narrative" onclick="generateNarrative()">Regenerate</button>
+              </div>
+              <div class="ai-result" id="narrative-result" style="white-space:pre-line;"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Room suggestions -->
+            <div style="margin-bottom:2rem;">
+              <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.8rem; flex-wrap:wrap;">
+                <span
+                  style="font-size:0.78rem; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; flex:1;">Room
+                  Suggestions</span>
+                <select class="room-select" id="room-select">
+                  <option value="living room">Living Room</option>
+                  <option value="bedroom">Bedroom</option>
+                  <option value="kitchen">Kitchen</option>
+                  <option value="home office">Home Office</option>
+                  <option value="dining room">Dining Room</option>
+                </select>
+                <button class="btn-primary" id="btn-suggest" onclick="generateSuggestions()">Generate</button>
+              </div>
+              <div class="ai-result empty" id="suggest-result">Select a room and click Generate.</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Ask a question -->
+            <div>
+              <p
+                style="font-size:0.78rem; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.8rem;">
+                Ask GaaZoo</p>
+              <div class="ask-row">
+                <input type="text" class="ask-input" id="ask-input"
+                  placeholder="e.g. What sofa would suit my living room?"
+                  onkeydown="if(event.key==='Enter') askQuestion()" />
+                <button class="btn-primary" id="btn-ask" onclick="askQuestion()">Ask</button>
+              </div>
+              <div class="ai-result empty hidden" id="ask-result"></div>
+            </div>
+          </div>
+
+          <footer>GAAZOO · AI-DRIVEN INTERIOR DESIGN · DESIGN PERSONALITY PROFILE</footer>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+
+        <script>
+          // ── Config ───────────────────────────────────────────────────────
+          // Use same host as the page (localhost or 127.0.0.1) so Spotify callback session cookie matches
+          const API = '';
+
+          // ── State ────────────────────────────────────────────────────────
+          let state = {
+            connected: false,
+            profile: null,
+            spotifyConnected: false,
+          };
+
+          // ── Init ─────────────────────────────────────────────────────────
+          window.addEventListener('DOMContentLoaded', async () => {
+            // Check if returning from OAuth callback
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('pinterest_connected') === 'true') {
+              showToast('Pinterest connected successfully!');
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            if (params.get('spotify_connected') === 'true') {
+              showToast('Connected to Spotify');
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            if (params.get('error')) {
+              const err = params.get('error');
+              const msg = err === 'spotify_state_mismatch'
+                ? 'Spotify: use the same address for the app and redirect URI (e.g. open this page at http://127.0.0.1:5000 and set Spotify redirect to http://127.0.0.1:5000/auth/spotify/callback).'
+                : 'Connection failed: ' + err;
+              showToast(msg, true);
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+
+            await checkAuthStatus();
+            if (params.get('spotify_connected') === 'true') {
+              switchTab('spotify');
+            }
+          });
+
+          // ── Auth status ──────────────────────────────────────────────────
+          async function checkAuthStatus() {
+            try {
+              const res = await fetch(`${API}/auth/status`, { credentials: 'include' });
+              const data = await res.json();
+              state.connected = data.pinterest_connected;
+              state.spotifyConnected = data.spotify_connected || false;
+              if (data.username) {
+                const usernameEl = document.getElementById('connected-username');
+                if (usernameEl) usernameEl.textContent = `Connected as @${data.username} — boards ready to analyse.`;
+              }
+              updateSpotifyUI();
+              updateUI();
+            } catch (e) {
+              console.warn('Backend not reachable:', e.message);
+            }
+          }
+
+          function updateSpotifyUI() {
+            const connectArea = document.getElementById('spotify-connect-area');
+            const connectedMsg = document.getElementById('spotify-connected-message');
+            if (connectArea) connectArea.classList.toggle('hidden', state.spotifyConnected);
+            if (connectedMsg) connectedMsg.classList.toggle('hidden', !state.spotifyConnected);
+            if (state.spotifyConnected) fetchSpotifyPlaylists();
+          }
+
+          async function fetchSpotifyPlaylists() {
+            const container = document.getElementById('spotify-playlists-list');
+            if (!container) return;
+            try {
+              const res = await fetch(`${API}/profile/spotify/playlists`, { credentials: 'include' });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Could not load playlists');
+              const isLive = data.source === 'spotify_api';
+              const reason = data.fallback_reason;
+              const sampleHint = reason === 'no_token'
+                ? 'Session not sent — open this app from the same URL you used for Spotify login (e.g. same port).'
+                : reason === 'empty_response'
+                ? 'Spotify returned no playlists — add your account in Spotify Developer Dashboard (User Management) or check app scopes.'
+                : reason === 'api_error'
+                ? 'Request to Spotify failed; showing sample data.'
+                : 'Showing sample data.';
+              document.querySelectorAll('.spotify-playlists-caption').forEach(el => {
+                el.textContent = isLive
+                  ? 'Your playlists — select to build your design profile:'
+                  : `Select playlists (sample data). ${sampleHint}`;
+              });
+              renderSpotifyPlaylists(data.playlists || []);
+            } catch (e) {
+              container.innerHTML = `<span style="color:var(--terracotta);">${e.message}</span>`;
+            }
+          }
+
+          function renderSpotifyPlaylists(playlists) {
+            const container = document.getElementById('spotify-playlists-list');
+            if (!container) return;
+            if (!playlists || !playlists.length) {
+              container.innerHTML = '<span style="color:var(--muted);">No playlists available.</span>';
+              return;
+            }
+            container.innerHTML = playlists.map(p => {
+              const name = (p.name || 'Untitled').replace(/</g, '&lt;');
+              const desc = (p.description || '').replace(/</g, '&lt;');
+              const count = p.track_count || 0;
+              return `
+                <label style="display:flex;align-items:center;padding:0.4rem 0.6rem;border-radius:4px;border:1px solid rgba(0,0,0,0.04);background:var(--cream);">
+                  <input type="checkbox" value="${p.id}" style="margin-right:0.6rem;" />
+                  <div style="font-size:0.9rem;">
+                    <div style="font-weight:600;color:var(--navy);">${name}</div>
+                    <div style="font-size:0.75rem;color:var(--muted);">${count} tracks</div>
+                  </div>
+                </label>
+              `;
+            }).join('');
+          }
+
+          async function analyseSpotify() {
+            const btn = document.getElementById('btn-spotify-build');
+            const container = document.getElementById('spotify-playlists-list');
+            const ids = container ? Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value) : [];
+            setLoading(btn, true, 'Analysing…');
+            try {
+              const res = await fetch(`${API}/profile/analyse/spotify`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ids.length ? { playlist_ids: ids } : {}),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Analysis failed');
+              _pendingAnalyses = data.analyses || [];
+              _pendingSource = 'spotify';
+              _pendingPlaylistIds = data.playlist_ids || [];
+              _pendingSliderPredictions = data.slider_predictions || {};
+              renderQuestionCard(_pendingAnalyses);
+              applySliderPredictions(_pendingSliderPredictions);
+              document.getElementById('card-questions').scrollIntoView({ behavior: 'smooth', block: 'start' });
+              showToast('Design signals from your music — answer the question and build your profile.');
+            } catch (e) {
+              showToast(e.message, true);
+            } finally {
+              setLoading(btn, false, 'Build profile from selected playlists');
+            }
+          }
+
+          // Fetch user's boards for selection
+          async function fetchBoards() {
+            const container = document.getElementById('boards-list');
+            if (!container) return;
+            container.innerHTML = 'Loading boards…';
+            try {
+              const res = await fetch(`${API}/profile/boards`, { credentials: 'include' });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Could not load boards');
+              renderBoardsList(data.boards || []);
+            } catch (e) {
+              container.innerHTML = `<div style="color:var(--terracotta);">Failed to load boards: ${e.message}</div>`;
+            }
+          }
+
+          function renderBoardsList(boards) {
+            const container = document.getElementById('boards-list');
+            if (!container) return;
+            if (!boards || boards.length === 0) {
+              container.innerHTML = '<div style="color:var(--muted);">No boards available.</div>';
+              return;
+            }
+            container.innerHTML = boards.map(b => {
+              const safeName = (b.name || 'Untitled').replace(/</g, '&lt;');
+              const img = b.image_url ? `<img src="${b.image_url}" style="width:56px;height:56px;object-fit:cover;border-radius:4px;margin-right:0.6rem;"/>` : '';
+              return `
+                <label style="display:flex;align-items:center;padding:0.4rem 0.6rem;border-radius:4px;border:1px solid rgba(0,0,0,0.04);background:var(--cream);">
+                  <input type="checkbox" value="${b.id}" style="margin-right:0.6rem;" />
+                  ${img}
+                  <div style="font-size:0. ninerem;">
+                    <div style="font-weight:600;color:var(--navy);">${safeName}</div>
+                    <div style="font-size:0.75rem;color:var(--muted);">${b.pin_count || 0} pins</div>
+                  </div>
+                </label>
+              `;
+            }).join('');
+          }
+
+          // ── State for two-step question flow ────────────────────────────
+          let _pendingAnalyses = [];
+          let _pendingSource = null;   // 'images' | 'boards' | 'spotify'
+          let _pendingFiles = [];
+          let _pendingBoardIds = [];
+          let _pendingPlaylistIds = [];
+          let _pendingSliderPredictions = {};   // {material_dna:{...}, shape_dna:{...}}
+
+          // ── Step 1: Analyse boards → show question card ──────────────────
+          async function analyseBoards() {
+            const btn = document.getElementById('btn-build-selected');
+            const container = document.getElementById('boards-list');
+            const ids = Array.from(
+              container.querySelectorAll('input[type="checkbox"]:checked')
+            ).map(i => i.value);
+            if (!ids.length) { showToast('Please select at least one board.', true); return; }
+            setLoading(btn, true, 'Analysing boards…');
+            try {
+              const res = await fetch(`${API}/profile/analyse/boards`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ board_ids: ids }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Analysis failed');
+              _pendingAnalyses = data.analyses || [];
+              _pendingSource = 'boards';
+              _pendingBoardIds = ids;
+              _pendingSliderPredictions = data.slider_predictions || {};
+              renderQuestionCard(_pendingAnalyses);
+              applySliderPredictions(_pendingSliderPredictions);
+            } catch (e) {
+              showToast(e.message, true);
+            } finally {
+              setLoading(btn, false, 'Build profile from selected boards');
+            }
+          }
+
+          // ── Tab switching (Pinterest connect card) ─────────────────────
+          function switchTab(tab) {
+            ['token', 'oauth', 'images', 'spotify'].forEach(t => {
+              const isActive = t === tab;
+              const btn = document.getElementById('tab-' + t);
+              if (!btn) return;
+              btn.style.borderBottomColor = isActive ? 'var(--terracotta)' : 'transparent';
+              btn.style.color = isActive ? 'var(--terracotta)' : 'var(--muted)';
+              btn.style.fontWeight = isActive ? '500' : '400';
+              const panel = document.getElementById('panel-' + t);
+              if (panel) panel.classList.toggle('hidden', !isActive);
+            });
+          }
+
+          // ── Connect via direct token ─────────────────────────────────────
+          async function connectWithToken() {
+            const input = document.getElementById('token-input');
+            const btn = document.getElementById('btn-token-connect');
+            const token = input.value.trim();
+            if (!token) { showToast('Please paste your Pinterest token.', true); return; }
+
+            setLoading(btn, true, 'Connecting…');
+            try {
+              const res = await fetch(`${API}/auth/pinterest/token`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ access_token: token }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Connection failed');
+
+              state.connected = true;
+              const el = document.getElementById('connected-username');
+              if (el && data.username) el.textContent = `Connected as @${data.username}`;
+              input.value = '';
+              updateUI();
+              showToast(data.message || 'Pinterest connected!');
+            } catch (e) {
+              showToast(e.message, true);
+            } finally {
+              setLoading(btn, false, 'Connect');
+            }
+          }
+
+          // ── Connect via OAuth ────────────────────────────────────────────
+          // Navigate the TOP window so OAuth works even when DPP is in an iframe.
+          // The callback redirects to /?pinterest_connected=true which reloads
+          // the parent shell and auto-switches to the Design Profile panel.
+          function connectPinterest(e) {
+            e.preventDefault();
+            window.top.location.href = '/auth/pinterest/login';
+          }
+
+          // ── Connect with Spotify ─────────────────────────────────────────
+          function connectSpotify(e) {
+            e.preventDefault();
+            window.top.location.href = '/auth/spotify/login';
+          }
+
+          async function disconnectSpotify() {
+            try {
+              await fetch(`${API}/auth/spotify/disconnect`, { method: 'POST', credentials: 'include' });
+            } catch (e) {
+              console.warn('Spotify disconnect failed:', e.message);
+            }
+            state.spotifyConnected = false;
+            updateSpotifyUI();
+            showToast('Spotify disconnected.');
+          }
+
+          // ── Disconnect ───────────────────────────────────────────────────
+          async function disconnectPinterest() {
+            try {
+              await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
+            } catch (e) {
+              console.warn('Logout failed:', e.message);
+            }
+
+            // Reset state
+            state.connected = false;
+            state.profile = null;
+            selectedFiles = [];
+
+            // Hide profile result and AI card
+            const profileResult = document.getElementById('profile-result');
+            const cardAi = document.getElementById('card-ai');
+            const cardProfile = document.getElementById('card-profile');
+            if (profileResult) profileResult.classList.add('hidden');
+            if (cardAi) cardAi.classList.add('hidden');
+            if (cardProfile) cardProfile.classList.add('hidden');
+
+            // Clear image previews
+            renderPreviews();
+
+            // Back to step 1
+            updateUI();
+            setStep(1);
+            showToast('Pinterest disconnected.');
+          }
+
+          // ── Image file handling ──────────────────────────────────────────
+          let selectedFiles = [];
+
+          function handleFileSelect(e) {
+            addFiles(Array.from(e.target.files));
+            e.target.value = '';
+          }
+
+          function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').style.borderColor = 'rgba(200,180,154,0.6)';
+            addFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+          }
+
+          function addFiles(newFiles) {
+            const existing = new Set(selectedFiles.map(f => f.name + f.size));
+            for (const f of newFiles) {
+              if (selectedFiles.length >= 10) break;
+              if (!existing.has(f.name + f.size)) { selectedFiles.push(f); existing.add(f.name + f.size); }
+            }
+            renderPreviews();
+          }
+
+          function removeFile(idx) { selectedFiles.splice(idx, 1); renderPreviews(); }
+
+          function renderPreviews() {
+            const row = document.getElementById('img-preview-row');
+            const cnt = document.getElementById('img-count');
+            const btn = document.getElementById('btn-analyse-images');
+            if (!row) return;
+
+            row.innerHTML = selectedFiles.map((f, i) => {
+              const url = URL.createObjectURL(f);
+              return `<div style="position:relative;width:70px;height:70px;">
+          <img src="${url}" style="width:70px;height:70px;object-fit:cover;border-radius:2px;"/>
+          <button onclick="removeFile(${i})" style="position:absolute;top:-5px;right:-5px;
+            width:16px;height:16px;border-radius:50%;background:var(--terracotta);color:white;
+            border:none;font-size:9px;cursor:pointer;line-height:1;padding:0;">✕</button>
+        </div>`;
+            }).join('');
+
+            if (cnt) cnt.textContent = selectedFiles.length > 0
+              ? `${selectedFiles.length} image${selectedFiles.length !== 1 ? 's' : ''} selected` : '';
+            if (btn) btn.disabled = selectedFiles.length === 0;
+          }
+
+          // ── Step 1: Analyse images → show question card ─────────────────
+          async function analyseImages() {
+            if (selectedFiles.length === 0) return;
+            const btn = document.getElementById('btn-analyse-images');
+            setLoading(btn, true, 'Analysing images…');
+            try {
+              const form = new FormData();
+              selectedFiles.forEach(f => form.append('images', f));
+              const res = await fetch(`${API}/profile/analyse/images`, {
+                method: 'POST', credentials: 'include', body: form,
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Analysis failed');
+              _pendingAnalyses = data.analyses || [];
+              _pendingSource = 'images';
+              _pendingFiles = [...selectedFiles];
+              _pendingSliderPredictions = data.slider_predictions || {};
+              renderQuestionCard(_pendingAnalyses);
+              applySliderPredictions(_pendingSliderPredictions);
+            } catch (e) {
+              showToast(e.message, true);
+            } finally {
+              setLoading(btn, false, 'Analyse images');
+              if (btn) btn.disabled = false;
+            }
+          }
+
+          // ── Render question card ─────────────────────────────────────────
+          function renderQuestionCard(analyses) {
+            const isSpotify = _pendingSource === 'spotify';
+            const cardConnect = document.getElementById('card-connect');
+            const qTitle = document.getElementById('card-questions-title');
+            const qSub = document.getElementById('card-questions-subtitle');
+            const sSub = document.getElementById('card-sliders-subtitle');
+
+            if (isSpotify && cardConnect) cardConnect.classList.add('hidden');
+            if (qTitle) qTitle.textContent = isSpotify ? 'From your Spotify taste' : 'What caught your eye?';
+            if (qSub) qSub.textContent = isSpotify
+              ? 'Based on your playlists, we inferred design directions. Select what resonates with you.'
+              : 'Select everything that resonated with you — the more you tell us, the more accurate your design profile will be.';
+            if (sSub) sSub.textContent = isSpotify
+              ? 'AI has predicted these from your music taste. Drag to adjust — your final values will sharpen your design profile.'
+              : 'AI has predicted these scores from your images. Drag to adjust — your final values will sharpen your design profile.';
+            const slidersTitle = document.getElementById('card-sliders-title');
+            if (slidersTitle) slidersTitle.textContent = isSpotify ? 'Fine-tune your music DNA' : 'Fine-tune your material DNA';
+            const dnaPinterest = document.getElementById('dna-panels-pinterest');
+            const dnaSpotify = document.getElementById('dna-panels-spotify');
+            if (dnaPinterest) dnaPinterest.classList.toggle('hidden', !!isSpotify);
+            if (dnaSpotify) dnaSpotify.classList.toggle('hidden', !isSpotify);
+
+            const list = document.getElementById('questions-list');
+            list.innerHTML = analyses.map((a, idx) => {
+              const thumb = isSpotify
+                ? `<div class="question-thumb" style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(29,185,84,0.12);color:var(--spotify);font-size:2rem;">🎵</div>`
+                : (a.image_url
+                  ? `<img class="question-thumb" src="${a.image_url}" alt="${_esc(a.filename)}" />`
+                  : `<div class="question-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.5rem;">🖼</div>`);
+              const badge = a.dimension
+                ? `<span class="q-dimension-badge">${_esc(a.dimension)}</span><br>` : (isSpotify ? '<span class="q-dimension-badge">Your playlists</span><br>' : '');
+              const defaultQuestion = isSpotify ? 'Which design direction speaks to you most?' : 'What drew you to this image?';
+              const opts = (a.options || []).map((opt, oi) => `
+                <label class="q-option">
+                  <input type="checkbox" data-img="${idx}" data-opt="${oi}" value="${_esc(opt)}" />
+                  ${_esc(opt)}
+                </label>`).join('');
+              return `<div class="question-item">
+                ${thumb}
+                <div class="question-body">
+                  ${badge}
+                  <p class="question-text">${_esc(a.question || defaultQuestion)}</p>
+                  <div class="question-options">
+                    ${opts}
+                    <label class="q-option" style="margin-top:0.3rem;">
+                      <input type="checkbox" data-img="${idx}" data-opt="other-toggle"
+                        onchange="toggleOther(this,${idx})" value="__other__" />
+                      Something else…
+                    </label>
+                    <input type="text" class="q-other-input hidden" id="other-${idx}"
+                      placeholder="${isSpotify ? 'Tell us what else you like…' : 'Tell us what else you liked…'}" />
+                  </div>
+                </div>
+              </div>`;
+            }).join('');
+            document.getElementById('card-questions').classList.remove('hidden');
+            document.getElementById('card-sliders').classList.remove('hidden');
+            document.getElementById('card-questions').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+
+          function toggleOther(cb, idx) {
+            const input = document.getElementById(`other-${idx}`);
+            if (!input) return;
+            input.classList.toggle('hidden', !cb.checked);
+            if (cb.checked) input.focus();
+          }
+
+          function _esc(str) {
+            return String(str || '')
+              .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          }
+
+          // ── DNA slider helpers ────────────────────────────────────────────
+          function switchDnaTab(panel, btn) {
+            document.querySelectorAll('.dna-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.dna-panel').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            const el = document.getElementById('dna-panel-' + panel);
+            if (el) el.classList.add('active');
+          }
+
+          function updateSliderVal(input, valId) {
+            const el = document.getElementById(valId);
+            if (el) el.textContent = (input.value / 100).toFixed(2);
+          }
+
+          // Apply AI-predicted slider values to the range inputs
+          function applySliderPredictions(predictions) {
+            if (!predictions) return;
+            const isSpotifySliders = predictions.material_dna && 'energy_calm_energetic' in predictions.material_dna;
+            if (isSpotifySliders) {
+              const prefix = 'sl-s-';
+              const valPrefix = 'sv-s-';
+              const apply = (dnaObj) => {
+                if (!dnaObj) return;
+                Object.entries(dnaObj).forEach(([key, val]) => {
+                  const slider = document.getElementById(prefix + key);
+                  const valEl = document.getElementById(valPrefix + key);
+                  if (slider) {
+                    slider.value = Math.round(Number(val) * 100);
+                    slider.title = `AI predicted: ${Number(val).toFixed(2)}`;
+                  }
+                  if (valEl) valEl.textContent = Number(val).toFixed(2);
+                });
+              };
+              apply(predictions.material_dna);
+              apply(predictions.shape_dna);
+              const dnaPinterest = document.getElementById('dna-panels-pinterest');
+              const dnaSpotify = document.getElementById('dna-panels-spotify');
+              if (dnaPinterest) dnaPinterest.classList.add('hidden');
+              if (dnaSpotify) dnaSpotify.classList.remove('hidden');
+            } else {
+              const apply = (dnaObj) => {
+                if (!dnaObj) return;
+                Object.entries(dnaObj).forEach(([key, val]) => {
+                  const slider = document.getElementById('sl-' + key);
+                  const valEl = document.getElementById('sv-' + key);
+                  if (slider) {
+                    slider.value = Math.round(Number(val) * 100);
+                    slider.title = `AI predicted: ${Number(val).toFixed(2)}`;
+                  }
+                  if (valEl) valEl.textContent = Number(val).toFixed(2);
+                });
+              };
+              apply(predictions.material_dna);
+              apply(predictions.shape_dna);
+            }
+          }
+
+          // Collect current slider values into {material_dna, shape_dna}
+          function _collectSliderValues() {
+            const materialKeys = ['natural_industrial', 'matte_glossy', 'warm_cool', 'soft_hard', 'minimal_layered', 'rustic_refined'];
+            const shapeKeys = ['light_dark_wood', 'smooth_textured', 'low_high_contrast', 'precision_handcrafted', 'uniform_patterned', 'flat_deep_finish'];
+            const spotifyMaterialKeys = ['energy_calm_energetic', 'mood_sad_happy', 'acoustic_electronic', 'retro_modern', 'instrumental_vocal', 'indie_mainstream'];
+            const spotifyShapeKeys = ['light_heavy', 'smooth_raw', 'balanced_dynamic', 'polished_organic', 'simple_complex', 'minimal_layered'];
+            const read = (keys, idPrefix) => Object.fromEntries(
+              keys.map(k => {
+                const el = document.getElementById(idPrefix + k);
+                return [k, el ? parseFloat((el.value / 100).toFixed(2)) : 0.5];
+              })
+            );
+            if (_pendingSource === 'spotify') {
+              return {
+                material_dna: read(spotifyMaterialKeys, 'sl-s-'),
+                shape_dna: read(spotifyShapeKeys, 'sl-s-'),
+              };
+            }
+            return { material_dna: read(materialKeys, 'sl-'), shape_dna: read(shapeKeys, 'sl-') };
+          }
+
+          // ── Step 2: Collect answers → build DPP ─────────────────────────
+          async function submitAnswers() { await _buildProfile(_collectSelections()); }
+          async function skipQuestions() { await _buildProfile([]); }
+
+          function _collectSelections() {
+            return _pendingAnalyses.map((a, idx) => {
+              const checked = Array.from(
+                document.querySelectorAll(`input[type="checkbox"][data-img="${idx}"]:checked`)
+              ).filter(cb => cb.value !== '__other__').map(cb => cb.value);
+              const inp = document.getElementById(`other-${idx}`);
+              const other = (inp && !inp.classList.contains('hidden')) ? inp.value.trim() : '';
+              return { filename: a.filename, checked, other };
+            });
+          }
+
+          async function _buildProfile(selections) {
+            const btn = document.getElementById('btn-submit-questions');
+            const skipBtn = document.getElementById('btn-skip-questions');
+            setLoading(btn, true, 'Building profile…');
+            if (skipBtn) skipBtn.disabled = true;
+            try {
+              let res, data;
+              const sliderValues = _collectSliderValues();
+              if (_pendingSource === 'images') {
+                const form = new FormData();
+                _pendingFiles.forEach(f => form.append('images', f));
+                form.append('selections', JSON.stringify(selections));
+                form.append('slider_values', JSON.stringify(sliderValues));
+                res = await fetch(`${API}/profile/build/images`, {
+                  method: 'POST', credentials: 'include', body: form,
+                });
+              } else if (_pendingSource === 'spotify') {
+                res = await fetch(`${API}/profile/build/spotify`, {
+                  method: 'POST', credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ playlist_ids: _pendingPlaylistIds, selections, slider_values: sliderValues }),
+                });
+              } else {
+                res = await fetch(`${API}/profile/build/boards`, {
+                  method: 'POST', credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ board_ids: _pendingBoardIds, selections, slider_values: sliderValues }),
+                });
+              }
+              data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Build failed');
+              state.profile = data.profile;
+              document.getElementById('card-questions').classList.add('hidden');
+              document.getElementById('card-sliders').classList.add('hidden');
+              const cardConnect = document.getElementById('card-connect');
+              if (cardConnect) cardConnect.classList.remove('hidden');
+              renderProfile(data.profile);
+              document.getElementById('card-profile').classList.remove('hidden');
+              setStep(2);
+              showToast(data.message || 'Profile built!');
+              _pendingAnalyses = []; _pendingFiles = []; _pendingBoardIds = []; _pendingPlaylistIds = []; _pendingSliderPredictions = {};
+              selectedFiles = []; renderPreviews();
+              document.getElementById('profile-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (e) {
+              showToast(e.message, true);
+            } finally {
+              setLoading(btn, false, 'Build my profile →');
+              if (skipBtn) skipBtn.disabled = false;
+            }
+          }
+
+          // ── Build profile ────────────────────────────────────────────────
+          async function buildProfile() {
+            const btn = document.getElementById('btn-build');
+            const errBox = document.getElementById('build-error');
+            setLoading(btn, true, 'Analysing boards…');
+            if (errBox) errBox.classList.add('hidden');
+
+            try {
+              const res = await fetch(`${API}/profile/build`, { credentials: 'include' });
+              const data = await res.json();
+
+              if (!res.ok) {
+                // Handle specific error types with helpful UI messages
+                if (data.error_type === 'trial_access') {
+                  showBuildError(
+                    '⚠️ Pinterest Trial Access Restriction',
+                    data.error,
+                    'https://developers.pinterest.com/docs/getting-started/connect-app/'
+                  );
+                  return;
+                }
+                if (data.reconnect) {
+                  state.connected = false;
+                  updateUI();
+                }
+                throw new Error(data.error || 'Profile build failed');
+              }
+
+              state.profile = data.profile;
+              renderProfile(data.profile);
+              document.getElementById('card-profile').classList.remove('hidden');
+              setStep(2);
+              showToast(data.message);
+              document.getElementById('profile-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (e) {
+              showToast(e.message, true);
+            } finally {
+              setLoading(btn, false, 'Analyse my Pinterest boards');
+            }
+          }
+
+          function showBuildError(title, message, link) {
+            let box = document.getElementById('build-error');
+            if (!box) {
+              box = document.createElement('div');
+              box.id = 'build-error';
+              document.getElementById('build-area').after(box);
+            }
+            box.innerHTML = `
+        <div style="margin-top:1.2rem; padding:1.2rem 1.4rem; background:#fff5f5;
+          border-left:3px solid var(--terracotta); border-radius:0 2px 2px 0;">
+          <p style="font-size:0.85rem; font-weight:600; color:var(--terracotta);
+            margin-bottom:0.5rem;">${title}</p>
+          <p style="font-size:0.82rem; color:var(--charcoal); line-height:1.65;
+            margin-bottom:0.8rem;">${message}</p>
+          ${link ? `<a href="${link}" target="_blank"
+            style="font-size:0.8rem; color:var(--blue, #2e86ab); text-decoration:underline;">
+            Request Standard Access →</a>` : ''}
+        </div>`;
+            box.classList.remove('hidden');
+          }
+
+          // ── Go to AI Step (CTA button after profile is shown) ───────────────
+          function goToAiStep() {
+            const cardAi = document.getElementById('card-ai');
+            cardAi.classList.remove('hidden');
+            setStep(3);
+            if (state.profile) autoPopulateNarrative(state.profile);
+            cardAi.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+
+          // ── Generate narrative ───────────────────────────────────────────
+          // Auto-populate narrative from DPP if AI already enriched it
+          function autoPopulateNarrative(profile) {
+            const out = document.getElementById('narrative-result');
+            if (!out) return;
+            if (profile.narrative && profile.ai_enriched) {
+              out.classList.remove('empty');
+              out.textContent = profile.narrative;
+            } else {
+              out.textContent = '';
+              out.classList.add('empty');
+              out.textContent = 'Click "Regenerate" to generate your personalised design story.';
+            }
+          }
+
+          // Regenerate narrative via API (forces fresh Gemini call)
+          async function generateNarrative() {
+            const btn = document.getElementById('btn-narrative');
+            const out = document.getElementById('narrative-result');
+            setLoading(btn, true, 'Writing…');
+            out.classList.remove('empty');
+            out.textContent = '';
+
+            try {
+              const res = await fetch(`${API}/ai/narrative`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              out.textContent = data.narrative;
+            } catch (e) {
+              out.textContent = 'Error: ' + e.message;
+              out.classList.add('empty');
+            } finally {
+              setLoading(btn, false, 'Regenerate');
+            }
+          }
+
+          // ── Generate suggestions ─────────────────────────────────────────
+          async function generateSuggestions() {
+            const btn = document.getElementById('btn-suggest');
+            const out = document.getElementById('suggest-result');
+            const roomType = document.getElementById('room-select').value;
+            setLoading(btn, true, 'Thinking…');
+            out.classList.remove('empty');
+            out.textContent = '';
+
+            try {
+              const res = await fetch(`${API}/ai/suggest`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_type: roomType }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              out.textContent = data.result.narrative;
+            } catch (e) {
+              out.textContent = 'Error: ' + e.message;
+              out.classList.add('empty');
+            } finally {
+              setLoading(btn, false, 'Generate');
+            }
+          }
+
+          // ── Ask a question ───────────────────────────────────────────────
+          async function askQuestion() {
+            const btn = document.getElementById('btn-ask');
+            const input = document.getElementById('ask-input');
+            const out = document.getElementById('ask-result');
+            const question = input.value.trim();
+            if (!question) return;
+
+            setLoading(btn, true, 'Asking…');
+            out.classList.remove('hidden', 'empty');
+            out.textContent = '';
+
+            try {
+              const res = await fetch(`${API}/ai/ask`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              out.textContent = data.answer;
+              input.value = '';
+            } catch (e) {
+              out.textContent = 'Error: ' + e.message;
+              out.classList.add('empty');
+            } finally {
+              setLoading(btn, false, 'Ask');
+            }
+          }
+
+          // ── Render helpers ────────────────────────────────────────────────
+
+          // Colour swatch — accepts {hex, label} or plain hex string
+          function _swatchHTML(c) {
+            const hex = typeof c === 'string' ? c : c.hex;
+            const label = typeof c === 'string' ? '' : (c.label || '');
+            return `<div style="display:flex;align-items:center;gap:0.5rem;">
+              <div style="width:36px;height:36px;border-radius:50%;background:${hex};
+                box-shadow:0 1px 4px rgba(0,0,0,0.15);flex-shrink:0;"></div>
+              <div>
+                <p style="font-size:0.75rem;font-weight:500;color:var(--charcoal);margin:0;">${hex}</p>
+                <p style="font-size:0.7rem;color:var(--muted);margin:0;">${label}</p>
+              </div></div>`;
+          }
+
+          function _renderMoodFromMusic(profile) {
+            const sections = document.querySelectorAll('.mood-from-music-section');
+            const contents = document.querySelectorAll('.mood-from-music-content');
+            const isSpotify = profile && profile.source === 'spotify';
+            const mv = profile && profile.mood_vector;
+            const show = isSpotify && mv && typeof mv.calm_energetic === 'number';
+            sections.forEach(el => { el.style.display = show ? 'block' : 'none'; });
+            if (!show) return;
+            const dims = [
+              { key: 'calm_energetic', left: 'Calm', right: 'Energetic' },
+              { key: 'warm_edgy', left: 'Warm', right: 'Edgy' },
+              { key: 'minimal_maximal', left: 'Minimal', right: 'Maximal' },
+              { key: 'vintage_modern', left: 'Vintage', right: 'Modern' }
+            ];
+            const html = dims.map(d => {
+              const v = Math.max(0, Math.min(1, Number(mv[d.key]) || 0.5));
+              const pct = Math.round(v * 100);
+              return `<div style="font-size:0.8rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.25rem;">
+                  <span style="color:var(--charcoal);">${d.left}</span>
+                  <span style="color:var(--muted);">${d.right}</span>
+                </div>
+                <div style="height:6px;background:rgba(200,180,154,0.3);border-radius:3px;overflow:hidden;">
+                  <div style="height:100%;width:${pct}%;background:var(--spotify);border-radius:3px;"></div>
+                </div>
+              </div>`;
+            }).join('');
+            contents.forEach(el => { el.innerHTML = html; });
+          }
+
+          function _renderIdentity(profile) {
+            const arc = (profile['1_identity'] || {}).archetypes || {};
+            const p = arc.primary || {}, s = arc.secondary || {}, t = arc.tertiary || {};
+            const conf = (profile['1_identity'] || {}).confidence || 0;
+            const isSpotify = profile && profile.source === 'spotify';
+            const badgeEl = document.getElementById('confidence-badge');
+            if (badgeEl) badgeEl.textContent = isSpotify
+              ? `${Math.round(conf * 100)}% match from your music`
+              : `${Math.round(conf * 100)}% confidence`;
+            const primaryLabel = isSpotify ? 'PRIMARY STYLE (from your taste)' : 'PRIMARY STYLE';
+            const secondaryLabel = isSpotify ? 'SECONDARY STYLE (from your taste)' : 'SECONDARY STYLE';
+            const tertiaryLabel = isSpotify ? 'TERTIARY STYLE (from your taste)' : 'TERTIARY STYLE';
+            document.getElementById('profile-grid').innerHTML =
+              _styleCell(primaryLabel, p.name, p.weight || 0.55) +
+              _styleCell(secondaryLabel, s.name, s.weight) +
+              (t.name ? `<div class="profile-cell" style="grid-column:1/-1;">
+                <p class="cell-label">${tertiaryLabel}</p>
+                <p class="cell-value" style="font-size:1rem;">${t.name}</p>
+                <p class="cell-weight">${Math.round((t.weight || 0.15) * 100)}%</p></div>` : '');
+          }
+
+          function _styleCell(label, name, weight) {
+            return `<div class="profile-cell">
+              <p class="cell-label">${label}</p>
+              <p class="cell-value">${name || '—'}</p>
+              <p class="cell-weight">${name && weight ? Math.round(weight * 100) + '%' : ''}</p></div>`;
+          }
+
+          function _renderColours(profile) {
+            const cp = profile['2_colour_preference'] || {};
+            // preferred_colours (from Template 16) or sampled_colours (from Template 15)
+            // Both are now [{hex, label}] objects; plain hex strings are also handled.
+            const colours = (cp.preferred_colours || cp.sampled_colours || []).slice(0, 6);
+            const swatchEl = document.getElementById('colour-swatches');
+            swatchEl.innerHTML = colours.length
+              ? colours.map(_swatchHTML).join('')
+              : `<p style="font-size:0.9rem;color:var(--charcoal);">${(cp.mood || '').replace(/_/g, ' ')}</p>`;
+          }
+
+          function _renderMaterials(profile) {
+            const mats = (profile['3_material_preference'] || {}).preferred_materials || [];
+            document.getElementById('materials-tags').innerHTML = mats.length
+              ? mats.map(m => `<span class="tag">${m.replace(/_/g, ' ')}</span>`).join('')
+              : '<span style="color:var(--muted);font-size:0.82rem;">Not detected</span>';
+          }
+
+          function _renderFinish(profile) {
+            const f = profile['4_finish_preference'] || {};
+            const opts = f.options || ['matte', 'satin', 'glossy', 'textured_raw'];
+            const sel = f.selected || '';
+            const tags = opts.map(o => {
+              const active = o === sel;
+              return `<span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;
+                border:1px solid ${active ? 'var(--terracotta)' : 'rgba(200,180,154,0.4)'};
+                background:${active ? 'rgba(184,96,71,0.08)' : 'transparent'};
+                color:${active ? 'var(--terracotta)' : 'var(--muted)'};
+                font-weight:${active ? '500' : '400'};">${o.replace(/_/g, ' ')}</span>`;
+            }).join('');
+            document.getElementById('finish-display').innerHTML =
+              `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.3rem;">${tags}</div>` +
+              (f.secondary ? `<p style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Also: ${f.secondary.replace(/_/g, ' ')}</p>` : '');
+          }
+
+          function _renderPattern(profile) {
+            const pt = profile['5_pattern_tolerance'] || {};
+            const lvl = pt.level || 2;
+            const bars = [1, 2, 3, 4].map(i =>
+              `<div style="height:5px;flex:1;border-radius:2px;background:${i <= lvl ? 'var(--terracotta)' : 'rgba(200,180,154,0.3)'};"></div>`
+            ).join('');
+            document.getElementById('pattern-display').innerHTML =
+              `<p style="font-size:0.88rem;font-weight:500;color:var(--charcoal);margin-bottom:0.4rem;">${pt.label || 'Subtle pattern'}</p>
+              <div style="display:flex;gap:3px;">${bars}</div>
+              <p style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;">${pt.description || ''}</p>`;
+          }
+
+          function _renderPermanence(profile) {
+            const pm = profile['6_furniture_permanence'] || {};
+            const remov = pm.level === 'removable_only';
+            document.getElementById('permanence-display').innerHTML =
+              `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                <span style="font-size:1.1rem;">${remov ? '📦' : '🏠'}</span>
+                <p style="font-size:0.88rem;font-weight:500;color:var(--charcoal);margin:0;">${pm.label || (remov ? 'Freestanding only' : 'No restriction')}</p>
+              </div>${remov ? '<p style="font-size:0.72rem;color:var(--muted);">No drilling or permanent installation</p>' : ''}`;
+          }
+
+          function _renderSources(profile) {
+            const isImage = profile.source === 'image_upload';
+            const isSpotify = profile.source === 'spotify';
+            const lbl = document.getElementById('source-label');
+            if (lbl) lbl.textContent = isSpotify ? 'FROM SPOTIFY' : (isImage ? 'IMAGES ANALYSED' : 'BOARDS ANALYSED');
+            const boards = profile.board_summary || [];
+            const row = document.getElementById('boards-row');
+            if (!row) return;
+            if (isSpotify && boards.length === 0) {
+              row.innerHTML = '<div class="board-thumb"><div class="board-img" style="display:flex;align-items:center;justify-content:center;background:rgba(29,185,84,0.12);color:var(--spotify);font-size:1.2rem;">🎵</div><p class="board-name">Your playlists</p></div>';
+              return;
+            }
+            row.innerHTML = boards.map(b => {
+              const name = (b.name || '').replace(/</g, '&lt;');
+              if (isSpotify) {
+                return `<div class="board-thumb">
+                  <div class="board-img" style="display:flex;align-items:center;justify-content:center;background:rgba(29,185,84,0.12);color:var(--spotify);font-size:1.2rem;">🎵</div>
+                  <p class="board-name">${name}</p>
+                </div>`;
+              }
+              return `<div class="board-thumb">
+                ${b.image_url
+                ? `<img class="board-img" data-src="${b.image_url}" src="${b.image_url}" alt="${name}" loading="lazy" onclick="openImage(this.dataset.src)"/>`
+                : `<div class="board-img" style="display:flex;align-items:center;justify-content:center;background:var(--cream);color:var(--muted);font-size:0.68rem;text-align:center;padding:4px;">${isImage ? '🖼' : (b.pin_count || 0) + ' pins'}</div>`}
+                <p class="board-name">${name}</p>
+              </div>`;
+            }).join('');
+          }
+
+          function _renderMeta(profile) {
+            const jsonEl = document.getElementById('dpp-json');
+            if (jsonEl) jsonEl.textContent = JSON.stringify({
+              profile_version: profile.profile_version,
+              source: profile.source || 'unknown',
+              mood_vector: profile.mood_vector || null,
+              '1_identity': profile['1_identity'],
+              '2_colour_preference': profile['2_colour_preference'],
+              '3_material_preference': profile['3_material_preference'],
+              '4_finish_preference': profile['4_finish_preference'],
+              '5_pattern_tolerance': profile['5_pattern_tolerance'],
+              '6_furniture_permanence': profile['6_furniture_permanence'],
+              material_shape_dna: profile.material_shape_dna || null,
+              ai_prompt_injection: profile.ai_prompt_injection || '',
+            }, null, 2);
+            const promptEl = document.getElementById('prompt-injection');
+            if (promptEl) {
+              const txt = profile.ai_prompt_injection || '';
+              promptEl.textContent = txt || 'No AI prompt available.';
+              promptEl.classList.toggle('empty', !txt);
+            }
+          }
+
+          // ── Render profile (orchestrator) ─────────────────────────────────
+          function renderProfile(profile) {
+            const isSpotify = profile && profile.source === 'spotify';
+            const titleEl = document.getElementById('card-profile-title');
+            const subtitleEl = document.getElementById('card-profile-subtitle');
+            const buildArea = document.getElementById('build-area');
+            const identityHeading = document.getElementById('profile-identity-heading');
+            const identitySubtitle = document.getElementById('profile-identity-subtitle');
+            const aiPromptLabel = document.getElementById('ai-prompt-label');
+            if (titleEl) titleEl.textContent = isSpotify ? 'Your Design Profile from Spotify' : 'Build your Design Profile';
+            if (subtitleEl) subtitleEl.textContent = isSpotify
+              ? 'Built from your Spotify playlists and music taste.'
+              : 'GaaZoo will scan your connected Pinterest boards and identify your aesthetic signature.';
+            if (buildArea) buildArea.style.display = isSpotify ? 'none' : '';
+            if (identityHeading) identityHeading.textContent = isSpotify ? 'Your design identity from Spotify' : 'Your Design Identity';
+            if (identitySubtitle) {
+              identitySubtitle.style.display = isSpotify ? 'block' : 'none';
+              identitySubtitle.textContent = isSpotify ? 'Inferred from your playlists and music taste.' : '';
+            }
+            if (aiPromptLabel) aiPromptLabel.textContent = isSpotify ? 'Design summary from your music taste' : 'AI PROMPT (human readable)';
+            const promptInjectionEl = document.getElementById('prompt-injection');
+            if (isSpotify && promptInjectionEl) promptInjectionEl.setAttribute('title', 'Inferred from your Spotify playlists — your music taste was used to predict this design style.');
+            _renderMoodFromMusic(profile);
+            _renderIdentity(profile);
+            _renderColours(profile);
+            _renderMaterials(profile);
+            _renderFinish(profile);
+            _renderPattern(profile);
+            _renderPermanence(profile);
+            _renderSources(profile);
+            _renderMeta(profile);
+            document.getElementById('profile-result').classList.remove('hidden');
+          }
+
+          // ── Lightbox ──────────────────────────────────────────────────────
+          function openImage(url) {
+            if (!url) return;
+            const overlay = document.createElement('div');
+            Object.assign(overlay.style, {
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 9999, cursor: 'zoom-out',
+            });
+            const img = document.createElement('img');
+            Object.assign(img.style, { maxWidth: '95%', maxHeight: '95%', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' });
+            img.src = url;
+            overlay.appendChild(img);
+            const close = () => { if (document.body.contains(overlay)) document.body.removeChild(overlay); };
+            overlay.addEventListener('click', close);
+            document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+            document.body.appendChild(overlay);
+          }
+
+          // ── UI helpers ───────────────────────────────────────────────────
+          function updateUI() {
+            const connectArea = document.getElementById('connect-area');
+            const connectedArea = document.getElementById('connected-area');
+            const cardProfile = document.getElementById('card-profile');
+            const cardAi = document.getElementById('card-ai');
+
+            if (state.connected) {
+              // Pinterest connected — show connected badge, show step 2 Pinterest panel
+              connectArea.classList.add('hidden');
+              connectedArea.classList.remove('hidden');
+              cardProfile.classList.remove('hidden');
+              setStep(2);
+              // Load boards for selection
+              fetchBoards();
+            } else {
+              // Not connected — show connect card (with all 3 tabs including image upload)
+              connectArea.classList.remove('hidden');
+              connectedArea.classList.add('hidden');
+              // Keep card-profile hidden ONLY if no profile built yet
+              if (!state.profile) {
+                cardProfile.classList.add('hidden');
+                cardAi.classList.add('hidden');
+                setStep(1);
+              }
+            }
+
+            if (state.profile) {
+              cardProfile.classList.remove('hidden');
+              // card-ai visibility is preserved from last explicit action; don't auto-show here
+            }
+          }
+
+          function setStep(active) {
+            document.querySelectorAll('.step').forEach(el => {
+              const n = parseInt(el.dataset.step);
+              el.classList.remove('active', 'done');
+              if (n === active) el.classList.add('active');
+              if (n < active) el.classList.add('done');
+            });
+          }
+
+          function setLoading(btn, loading, label) {
+            if (loading) {
+              btn.disabled = true;
+              btn.innerHTML = `<span class="spinner"></span> ${label}`;
+            } else {
+              btn.disabled = false;
+              btn.innerHTML = label;
+            }
+          }
+
+          function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+          }
+        </script>
+      </body>
+
+      </html>

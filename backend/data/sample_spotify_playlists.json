@@ -1,0 +1,59 @@
+{
+  "playlists": [
+    {
+      "id": "sample_playlist_1",
+      "name": "Chill & Cozy",
+      "description": "Laid-back acoustic and soft indie",
+      "tracks": [
+        { "name": "Holocene", "artist": "Bon Iver", "genre": "indie folk" },
+        { "name": "To Build a Home", "artist": "The Cinematic Orchestra", "genre": "ambient" },
+        { "name": "Flume", "artist": "Bon Iver", "genre": "indie folk" },
+        { "name": "First Day of My Life", "artist": "Bright Eyes", "genre": "indie" },
+        { "name": "The Scientist", "artist": "Coldplay", "genre": "alternative" }
+      ]
+    },
+    {
+      "id": "sample_playlist_2",
+      "name": "Minimal Focus",
+      "description": "Clean, minimal electronic and ambient",
+      "tracks": [
+        { "name": "Alberto Balsalm", "artist": "Aphex Twin", "genre": "ambient electronic" },
+        { "name": "Avril 14th", "artist": "Aphex Twin", "genre": "minimal" },
+        { "name": "Breathe Me", "artist": "Sia", "genre": "ambient pop" },
+        { "name": "Teardrop", "artist": "Massive Attack", "genre": "trip hop" },
+        { "name": "Replica", "artist": "Oneohtrix Point Never", "genre": "electronic" }
+      ]
+    },
+    {
+      "id": "sample_playlist_3",
+      "name": "Warm & Natural",
+      "description": "Organic, earthy sounds",
+      "tracks": [
+        { "name": "Rivers and Roads", "artist": "The Head and the Heart", "genre": "folk" },
+        { "name": "Home", "artist": "Edward Sharpe & The Magnetic Zeros", "genre": "folk" },
+        { "name": "Ho Hey", "artist": "The Lumineers", "genre": "folk rock" },
+        { "name": "Skinny Love", "artist": "Bon Iver", "genre": "indie folk" },
+        { "name": "Holocene", "artist": "Bon Iver", "genre": "indie folk" }
+      ]
+    }
+  ],
+  "user_summary": {
+    "top_artists": ["Bon Iver", "Aphex Twin", "The Lumineers", "The Head and the Heart", "Coldplay"],
+    "top_tracks": [
+      { "name": "Holocene", "artist": "Bon Iver" },
+      { "name": "Avril 14th", "artist": "Aphex Twin" },
+      { "name": "Ho Hey", "artist": "The Lumineers" },
+      { "name": "Rivers and Roads", "artist": "The Head and the Heart" },
+      { "name": "To Build a Home", "artist": "The Cinematic Orchestra" }
+    ],
+    "top_genres": ["indie folk", "ambient", "folk", "ambient electronic", "folk rock"],
+    "audio_features": {
+      "energy": 0.35,
+      "valence": 0.58,
+      "tempo": 98,
+      "acousticness": 0.72,
+      "danceability": 0.28,
+      "instrumentalness": 0.41
+    }
+  }
+}
