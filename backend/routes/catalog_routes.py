@@ -53,9 +53,18 @@ def _enrich(item: dict) -> dict:
 @router.get("/api/catalog")
 def api_catalog(status: Optional[str] = None, limit: int = 100, offset: int = 0):
     limit = min(limit, 200)
+    # "all" or empty means no filter; only pending/succeeded/failed filter by conversion_status
+    conversion_filter = None
+    if status and str(status).strip().lower() not in ("", "all"):
+        conversion_filter = str(status).strip()
     try:
-        items = list_items(conversion_status=status, limit=limit, offset=offset)
-        return {"items": [_enrich(it) for it in items]}
+        items = list_items(conversion_status=conversion_filter, limit=limit, offset=offset)
+        result = {"items": [_enrich(it) for it in items]}
+        if not result["items"]:
+            result["message"] = (
+                "Catalog is empty. Add items via Data Ingestion (Amazon/Google) or Add local vendor."
+            )
+        return result
     except Exception as e:
         return JSONResponse({
             "items": [],

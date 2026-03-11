@@ -352,6 +352,117 @@ body{
 .tag-ok  {color:var(--neo);  background:var(--neo-light);  border-color:var(--neo-border)}
 .tag-fail{color:var(--red);  background:var(--red-light);  border-color:var(--red-border)}
 
+/* ── API Explorer ─────────────────────────────── */
+.api-bridge-list{display:flex;flex-direction:column;gap:1rem}
+.api-bridge-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:1.25rem 1.5rem;
+  box-shadow:var(--shadow);
+  transition:border-color .15s,box-shadow .15s;
+}
+.api-bridge-card:hover{border-color:var(--border2);box-shadow:var(--shadow2)}
+.api-bridge-card-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem;
+}
+.api-bridge-name{font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:.2rem}
+.api-bridge-route{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.8rem;
+  color:var(--ink3);
+  word-break:break-all;
+}
+.api-bridge-method{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;
+  font-weight:600;
+  padding:.25rem .5rem;
+  border-radius:4px;
+  flex-shrink:0;
+}
+.api-bridge-method.get{background:var(--serp-light);color:var(--serp);border:1px solid var(--serp-border)}
+.api-bridge-method.post{background:var(--neo-light);color:var(--neo);border:1px solid var(--neo-border)}
+.api-bridge-method.delete{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)}
+.api-bridge-desc{font-size:.8rem;color:var(--ink3);line-height:1.5;margin-bottom:.85rem}
+.api-bridge-payload{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:.6rem .85rem;
+  color:var(--ink3);
+  white-space:pre-wrap;word-break:break-word;
+  margin-bottom:.85rem;
+  max-height:100px;overflow-y:auto;
+}
+.api-bridge-card-actions{display:flex;align-items:center;gap:.5rem}
+.api-bridge-modal{
+  position:fixed;inset:0;z-index:1000;
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;
+  opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s;
+}
+.api-bridge-modal[aria-hidden="false"]{opacity:1;visibility:visible}
+.api-bridge-modal-backdrop{
+  position:absolute;inset:0;background:rgba(0,0,0,.35);cursor:pointer;
+}
+.api-bridge-modal-box{
+  position:relative;background:var(--white);border-radius:var(--r3);
+  box-shadow:var(--shadow2);max-width:560px;width:100%;
+  max-height:90vh;overflow:hidden;display:flex;flex-direction:column;
+}
+.api-bridge-modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 1.25rem;border-bottom:1px solid var(--border);
+}
+.api-bridge-modal-title{font-size:1rem;font-weight:600;color:var(--ink);margin:0}
+.api-bridge-modal-close{
+  width:32px;height:32px;border:none;background:var(--bg2);
+  border-radius:var(--r);cursor:pointer;font-size:1.25rem;line-height:1;
+  color:var(--ink3);transition:background .15s,color .15s;
+}
+.api-bridge-modal-close:hover{background:var(--bg3);color:var(--ink)}
+.api-bridge-modal-body{padding:1.25rem;overflow-y:auto;flex:1}
+.api-bridge-label{
+  display:block;font-size:.72rem;font-weight:600;letter-spacing:.03em;
+  color:var(--ink3);margin-bottom:.4rem;
+}
+.api-bridge-textarea{
+  width:100%;font-family:'JetBrains Mono',monospace;font-size:.8rem;
+  padding:.75rem;border:1.5px solid var(--border);border-radius:var(--r);
+  background:var(--bg);color:var(--ink);resize:vertical;margin-bottom:1rem;
+}
+.api-bridge-textarea:focus{outline:none;border-color:var(--ink3)}
+.api-bridge-modal-actions{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+.api-bridge-status{font-size:.8rem;color:var(--ink4)}
+.api-bridge-result-wrap{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.api-bridge-result{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1rem;overflow:auto;max-height:280px;
+  white-space:pre-wrap;word-break:break-word;margin:0;color:var(--ink);
+}
+.api-bridge-multipart-form{display:flex;flex-direction:column;gap:.75rem}
+.api-bridge-multipart-form .api-bridge-mp-row{display:flex;flex-direction:column;gap:.3rem}
+.api-bridge-multipart-form .api-bridge-mp-row label{font-size:.72rem;font-weight:600;color:var(--ink3)}
+.api-bridge-multipart-form .api-bridge-mp-row input[type="text"],
+.api-bridge-multipart-form .api-bridge-mp-row input[type="number"]{
+  padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:var(--r);
+  background:var(--bg);font-size:.85rem;color:var(--ink);
+}
+.api-bridge-multipart-form .api-bridge-mp-row input[type="file"]{
+  font-size:.8rem;color:var(--ink3);padding:.35rem 0;
+}
+.api-bridge-multipart-form .api-bridge-mp-row input:focus{outline:none;border-color:var(--ink3)}
+.api-bridge-params-hint-wrap{
+  margin-bottom:1rem;padding:.65rem .85rem;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+}
+.api-bridge-params-hint-label{font-size:.7rem;font-weight:600;letter-spacing:.04em;color:var(--ink4);display:block;margin-bottom:.25rem}
+.api-bridge-params-hint{margin:0;font-size:.8rem;color:var(--ink3);line-height:1.5}
+
 /* ── catalog grid ────────────────────────────── */
 .cat-toolbar{
   display:flex;align-items:flex-end;justify-content:space-between;
@@ -646,6 +757,13 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
       <span class="nav-icon">📐</span>
       Load 3D model
     </button>
+
+    <div class="nav-section" style="margin-top:.5rem">Tools</div>
+    <button class="nav-item" data-panel="apibridge">
+      <span class="nav-icon">🔌</span>
+      API Explorer
+      <span class="nav-badge">Test</span>
+    </button>
   </nav>
 
   <div class="sidebar-footer">
@@ -666,6 +784,53 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
   <div class="panel" id="panel-dpp">
     <div class="panel-dpp-wrap">
       <iframe id="dppFrame" src="about:blank" title="Design Personality Profile" allowfullscreen allow="same-origin"></iframe>
+    </div>
+  </div>
+
+  <!-- ── PANEL: API EXPLORER ──────────────────────────────────────────────── -->
+  <div class="panel" id="panel-apibridge">
+    <div class="page-head">
+      <div class="page-title">API Explorer</div>
+      <div class="page-desc">List of all APIs used in this repo. Click <strong>Test</strong> to send a request with your payload and view the response.</div>
+    </div>
+    <div id="apiBridgeList" class="api-bridge-list"></div>
+  </div>
+
+  <!-- API Explorer Test modal -->
+  <div id="apiBridgeModal" class="api-bridge-modal" aria-hidden="true">
+    <div class="api-bridge-modal-backdrop"></div>
+    <div class="api-bridge-modal-box">
+      <div class="api-bridge-modal-head">
+        <h3 id="apiBridgeModalTitle" class="api-bridge-modal-title"></h3>
+        <button type="button" class="api-bridge-modal-close" id="apiBridgeModalClose" aria-label="Close">×</button>
+      </div>
+      <div class="api-bridge-modal-body">
+        <p id="apiBridgePathParamHint" class="api-bridge-desc" style="display:none;margin-bottom:.75rem;font-size:.78rem;color:var(--ink3)"></p>
+        <div id="apiBridgeParamsHintWrap" class="api-bridge-params-hint-wrap" style="display:none">
+          <span class="api-bridge-params-hint-label">What to send:</span>
+          <p id="apiBridgeParamsHint" class="api-bridge-params-hint"></p>
+        </div>
+        <div id="apiBridgePayloadSection">
+          <label class="api-bridge-label">Payload (JSON)</label>
+          <textarea id="apiBridgePayloadInput" class="api-bridge-textarea" rows="8" placeholder='{"key": "value"}'></textarea>
+        </div>
+        <div id="apiBridgeQuerySection" style="display:none">
+          <label class="api-bridge-label">Query parameters (one per line: key=value)</label>
+          <textarea id="apiBridgeQueryInput" class="api-bridge-textarea" rows="4" placeholder="status=all&#10;limit=10"></textarea>
+        </div>
+        <div id="apiBridgeMultipartSection" style="display:none">
+          <p class="api-bridge-desc" style="margin-bottom:.75rem;font-size:.78rem;color:var(--ink3)">Upload file(s) and fill optional fields, then click Run request.</p>
+          <div id="apiBridgeMultipartForm" class="api-bridge-multipart-form"></div>
+        </div>
+        <div class="api-bridge-modal-actions">
+          <button type="button" class="btn btn-ink" id="apiBridgeExecuteBtn">Run request</button>
+          <span id="apiBridgeExecuteStatus" class="api-bridge-status"></span>
+        </div>
+        <div id="apiBridgeResultWrap" class="api-bridge-result-wrap" style="display:none">
+          <label class="api-bridge-label">Response</label>
+          <pre id="apiBridgeResult" class="api-bridge-result"></pre>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1102,6 +1267,7 @@ function switchPanel(name, iframeQuery){
   const panel=document.getElementById('panel-'+name);
   if(panel)panel.classList.add('active');
   if(name==='catalog')loadCatalog();
+  if(name==='apibridge')renderApiBridgeList();
   if(name==='dpp'){
     const frame=document.getElementById('dppFrame');
     if(frame){
@@ -1140,6 +1306,350 @@ function switchPanel(name, iframeQuery){
 
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>switchPanel(btn.dataset.panel));
+});
+
+/* ──────────────────────────────────────────────
+   API EXPLORER
+────────────────────────────────────────────── */
+const API_BRIDGE_LIST = [
+  { name: "Health check", method: "GET", path: "/health", description: "Returns service status and framework info.", payload: null, useQuery: false, paramsHint: "No parameters required. Leave the box below empty and click Run request." },
+  { name: "Auth status", method: "GET", path: "/auth/status", description: "Returns current auth state (Pinterest/Spotify connected).", payload: null, useQuery: false, paramsHint: "No parameters required. Leave the box below empty and click Run request." },
+  { name: "List catalog", method: "GET", path: "/api/catalog", description: "List catalog items with optional status, limit, offset.", payload: { status: "all", limit: 100, offset: 0 }, useQuery: true, queryExample: "status=all\nlimit=10\noffset=0", paramsHint: "Optional query params (one per line: key=value): status (e.g. all, pending), limit, offset. Example is pre-filled; edit or leave as is." },
+  { name: "Get catalog item", method: "GET", path: "/api/catalog/{asin}", description: "Get a single catalog item by ASIN. Replace {asin} in path with actual ASIN.", payload: null, useQuery: false, pathParam: "asin", paramsHint: "When you click Run request you will be prompted to enter the ASIN (e.g. B08N5WRWNW). No query params needed." },
+  { name: "Delete catalog item", method: "DELETE", path: "/api/catalog/{asin}", description: "Delete item by ASIN. Query: files=1 to delete files.", payload: null, useQuery: true, queryExample: "files=1", pathParam: "asin", paramsHint: "You will be prompted for ASIN. Optional query: files=1 (default) to delete files, files=0 to keep files." },
+  { name: "Fetch images", method: "POST", path: "/api/fetch-images", description: "Fetch product images from Amazon or Google SERP and save to Neo4j.", payload: { source: "amazon", query: "office chair", country: "IN", max_amazon: 5, num_serp: 10 }, useQuery: false, paramsHint: "JSON body. Required: query (string). Optional: source (amazon | google), country, max_amazon, num_serp, max_images_per_product. Example is pre-filled." },
+  { name: "Add local vendor", method: "POST", path: "/api/add-local-vendor", description: "Add a product from local vendor (multipart: image file + title and optional metadata). Same as the Add to catalog form.", useQuery: false, multipart: true, paramsHint: "Required: title and an image file. Optional: vendor name, category, subcategory, color, style, material, width, height, source URL, product dimensions. All fields match the Add to catalog form.", multipartFields: [
+    { name: "image", type: "file", required: true, accept: "image/*", label: "Product image (required)" },
+    { name: "title", type: "text", required: true, label: "Product title (required)", placeholder: "Product title" },
+    { name: "vendor_name", type: "text", default: "Local vendor", label: "Vendor name" },
+    { name: "product_type", type: "text", default: "General", label: "Category" },
+    { name: "product_subtype", type: "text", default: "Other", label: "Subcategory" },
+    { name: "colour", type: "text", label: "Color", placeholder: "-" },
+    { name: "style", type: "text", label: "Style", placeholder: "-" },
+    { name: "material", type: "text", label: "Material", placeholder: "-" },
+    { name: "width", type: "text", label: "Width (px)" },
+    { name: "height", type: "text", label: "Height (px)" },
+    { name: "source_url", type: "text", label: "Source URL (optional)", placeholder: "https://..." },
+    { name: "product_dimensions", type: "text", label: "Product dimensions (optional)", placeholder: "e.g. 50 x 30 x 25 inches" }
+  ]},
+  { name: "Convert selected", method: "POST", path: "/api/convert-selected", description: "Trigger 3D conversion for selected catalog ASINs.", payload: { asins: [] }, useQuery: false, paramsHint: "JSON body: asins (array of ASIN strings to convert). Example: {\"asins\": [\"B08N5WRWNW\"]}. Pre-filled example can be edited." },
+  { name: "Profile boards", method: "GET", path: "/profile/boards", description: "List Pinterest boards (requires session).", payload: null, useQuery: false, paramsHint: "No parameters required. You must be logged in via Pinterest. Leave empty and click Run request." },
+  { name: "Get profile", method: "GET", path: "/profile/get", description: "Get current design personality profile.", payload: null, useQuery: false, paramsHint: "No parameters required. Leave empty and click Run request." },
+  { name: "Analyse boards", method: "POST", path: "/profile/analyse/boards", description: "Analyse selected Pinterest boards for DPP (request body from frontend).", payload: {}, useQuery: false, paramsHint: "JSON body (usually built by the app from selected boards). Can send {} for a minimal request; full payload typically includes board IDs and options." },
+  { name: "Build profile from boards", method: "POST", path: "/profile/build/boards", description: "Build DPP from selected boards (request body from frontend).", payload: {}, useQuery: false, paramsHint: "JSON body (built by the app from selected boards and analyses). Can send {} for minimal; full payload includes raw_dpp, params, etc." },
+  { name: "Spotify playlists", method: "GET", path: "/profile/spotify/playlists", description: "List user Spotify playlists (requires session).", payload: null, useQuery: false, paramsHint: "No parameters required. You must be logged in via Spotify. Leave empty and click Run request." },
+  { name: "Proxy GLB", method: "GET", path: "/proxy-glb", description: "Proxy a GLB from external URL (query: url=...).", payload: null, useQuery: true, queryExample: "url=https://example.com/model.glb", paramsHint: "Required query param: url (full URL to a .glb file). One line: url=https://.... Example is pre-filled." },
+  { name: "Generate 3D", method: "POST", path: "/generate-3d", description: "Convert a single image to 3D via Meshy (multipart: image + optional dimensions).", useQuery: false, multipart: true, paramsHint: "Required: choose an image file. Optional: obj_width, obj_height, obj_depth (numbers), obj_unit (cm/mm/m/in/ft).", multipartFields: [
+    { name: "image", type: "file", required: true, accept: "image/*", label: "Image file (required)" },
+    { name: "obj_width", type: "text", label: "Width (optional)" },
+    { name: "obj_height", type: "text", label: "Height (optional)" },
+    { name: "obj_depth", type: "text", label: "Depth (optional)" },
+    { name: "obj_unit", type: "text", default: "cm", label: "Unit" }
+  ]},
+  { name: "3D dimensions", method: "POST", path: "/3d-dimensions", description: "Get bounding box dimensions of uploaded .glb/.obj (multipart: file, obj_unit).", useQuery: false, multipart: true, paramsHint: "Required: select a .glb or .obj file. Optional: obj_unit (cm, mm, m, in, ft). Returns W × H × D in the chosen unit.", multipartFields: [
+    { name: "file", type: "file", required: true, accept: ".glb,.obj", label: "3D file .glb or .obj (required)" },
+    { name: "obj_unit", type: "text", default: "cm", label: "Unit" }
+  ]},
+  { name: "Scale 3D", method: "POST", path: "/scale-3d", description: "Upload and scale 3D model (multipart: file + optional dimensions or scale by %).", useQuery: false, multipart: true, paramsHint: "Required: select a .glb or .obj file. Optional: obj_width, obj_height, obj_depth (real-world size), obj_unit; or use scale_percent + scale_direction (increase | decrease) to scale by %.", multipartFields: [
+    { name: "file", type: "file", required: true, accept: ".glb,.obj", label: "3D file .glb or .obj (required)" },
+    { name: "obj_width", type: "text", label: "Width (optional)" },
+    { name: "obj_height", type: "text", label: "Height (optional)" },
+    { name: "obj_depth", type: "text", label: "Depth (optional)" },
+    { name: "obj_unit", type: "text", default: "cm", label: "Unit" },
+    { name: "scale_percent", type: "text", label: "Scale % (optional, e.g. 20)" },
+    { name: "scale_direction", type: "text", default: "increase", label: "Scale direction (increase | decrease)" }
+  ]},
+  { name: "AI suggest", method: "POST", path: "/ai/suggest", description: "Get design suggestions from DPP (JSON body).", payload: {}, useQuery: false, paramsHint: "JSON body (optional). The app usually sends the current DPP/profile. You can send {} to try; backend may use session profile." },
+  { name: "AI narrative", method: "POST", path: "/ai/narrative", description: "Get narrative from DPP (JSON body).", payload: {}, useQuery: false, paramsHint: "JSON body (optional). Sends profile/DPP data. {} is valid; backend may use session profile." },
+  { name: "AI ask", method: "POST", path: "/ai/ask", description: "Ask a question about the profile (JSON body with question).", payload: { question: "What style suits me?" }, useQuery: false, paramsHint: "JSON body. Include question (string). Example is pre-filled. Backend uses session profile to answer." },
+];
+
+function renderApiBridgeList(){
+  const listEl = document.getElementById('apiBridgeList');
+  if(!listEl) return;
+  const API = window.GAAZOO_API || '';
+  listEl.innerHTML = API_BRIDGE_LIST.map(api => {
+    const methodClass = (api.method || 'GET').toLowerCase();
+    let payloadStr = '—';
+    if(api.multipart && api.multipartFields) {
+      const fileFields = api.multipartFields.filter(f => f.type === 'file').map(f => f.name);
+      const formFields = api.multipartFields.filter(f => f.type !== 'file').map(f => f.name + (f.default ? '=' + f.default : ''));
+      payloadStr = 'Multipart: ' + (fileFields.length ? 'file(' + fileFields.join(', ') + ')' : '') + (formFields.length ? ' + ' + formFields.join(', ') : '');
+    } else if(api.payload !== null && api.payload !== undefined) {
+      payloadStr = typeof api.payload === 'string' ? api.payload : JSON.stringify(api.payload, null, 2);
+    }
+    return `
+      <div class="api-bridge-card" data-api-index="${API_BRIDGE_LIST.indexOf(api)}">
+        <div class="api-bridge-card-head">
+          <div>
+            <div class="api-bridge-name">${esc(api.name)}</div>
+            <div class="api-bridge-route">${api.method} ${api.path}</div>
+          </div>
+          <span class="api-bridge-method ${methodClass}">${api.method}</span>
+        </div>
+        <p class="api-bridge-desc">${esc(api.description)}</p>
+        <div class="api-bridge-payload">${esc(payloadStr)}</div>
+        <div class="api-bridge-card-actions">
+          <button type="button" class="btn btn-ink api-bridge-test-btn" data-api-index="${API_BRIDGE_LIST.indexOf(api)}">Test</button>
+          <button type="button" class="btn btn-outline api-bridge-copy-curl-card-btn" data-api-index="${API_BRIDGE_LIST.indexOf(api)}">Copy cURL</button>
+        </div>
+      </div>`;
+  }).join('');
+  listEl.querySelectorAll('.api-bridge-test-btn').forEach(btn => {
+    btn.addEventListener('click', () => openApiBridgeModal(parseInt(btn.dataset.apiIndex, 10)));
+  });
+  listEl.querySelectorAll('.api-bridge-copy-curl-card-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.apiIndex, 10);
+      const api = API_BRIDGE_LIST[idx];
+      if(!api) return;
+      const curl = buildApiExplorerCurlFromApi(api);
+      navigator.clipboard.writeText(curl).then(() => {
+        const label = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = label; }, 2000);
+      }).catch(() => {});
+    });
+  });
+}
+
+let currentApiBridgeIndex = -1;
+function openApiBridgeModal(index){
+  const api = API_BRIDGE_LIST[index];
+  if(!api) return;
+  currentApiBridgeIndex = index;
+  const modal = document.getElementById('apiBridgeModal');
+  const titleEl = document.getElementById('apiBridgeModalTitle');
+  const payloadSection = document.getElementById('apiBridgePayloadSection');
+  const querySection = document.getElementById('apiBridgeQuerySection');
+  const payloadInput = document.getElementById('apiBridgePayloadInput');
+  const queryInput = document.getElementById('apiBridgeQueryInput');
+  const resultWrap = document.getElementById('apiBridgeResultWrap');
+  const statusEl = document.getElementById('apiBridgeExecuteStatus');
+  if(!modal || !titleEl) return;
+  titleEl.textContent = api.name + ' — ' + api.method + ' ' + api.path;
+  const pathParamHint = document.getElementById('apiBridgePathParamHint');
+  const paramsHintWrap = document.getElementById('apiBridgeParamsHintWrap');
+  const paramsHintEl = document.getElementById('apiBridgeParamsHint');
+  const multipartSection = document.getElementById('apiBridgeMultipartSection');
+  const multipartForm = document.getElementById('apiBridgeMultipartForm');
+  if(paramsHintWrap && paramsHintEl){
+    if(api.paramsHint){ paramsHintWrap.style.display = 'block'; paramsHintEl.textContent = api.paramsHint; }
+    else { paramsHintWrap.style.display = 'none'; }
+  }
+  if(pathParamHint) pathParamHint.style.display = (api.pathParam && api.path && api.path.includes('{'+api.pathParam+'}')) ? 'block' : 'none';
+  if(pathParamHint && api.pathParam) pathParamHint.textContent = 'When you click Run, you will be prompted for path parameter: ' + api.pathParam;
+  if(api.multipart && api.multipartFields && multipartForm){
+    multipartSection.style.display = 'block';
+    payloadSection.style.display = 'none';
+    querySection.style.display = 'none';
+    multipartForm.innerHTML = api.multipartFields.map(f => {
+      const id = 'apibridge_mp_' + f.name;
+      if(f.type === 'file'){
+        return '<div class="api-bridge-mp-row"><label for="'+id+'">'+esc(f.label || f.name)+'</label><input type="file" id="'+id+'" data-apibridge-field="'+esc(f.name)+'" accept="'+(f.accept||'')+'" '+(f.required ? 'required' : '')+'></div>';
+      }
+      return '<div class="api-bridge-mp-row"><label for="'+id+'">'+esc(f.label || f.name)+'</label><input type="'+(f.type||'text')+'" id="'+id+'" data-apibridge-field="'+esc(f.name)+'" value="'+esc(f.default||'')+'" placeholder="'+(f.placeholder||'')+'"></div>';
+    }).join('');
+  } else if(api.useQuery){
+    multipartSection.style.display = 'none';
+    querySection.style.display = 'block';
+    payloadSection.style.display = 'none';
+    queryInput.value = api.queryExample || '';
+    queryInput.placeholder = 'key=value';
+  } else if(api.method === 'GET' || api.method === 'DELETE'){
+    multipartSection.style.display = 'none';
+    querySection.style.display = 'block';
+    payloadSection.style.display = 'none';
+    queryInput.value = api.queryExample || '';
+    queryInput.placeholder = 'key=value (optional)';
+  } else {
+    multipartSection.style.display = 'none';
+    querySection.style.display = 'none';
+    payloadSection.style.display = 'block';
+    payloadInput.value = typeof api.payload === 'object' && api.payload && !Array.isArray(api.payload) ? JSON.stringify(api.payload, null, 2) : (api.payload && typeof api.payload === 'string' ? api.payload : '{}');
+  }
+  resultWrap.style.display = 'none';
+  statusEl.textContent = '';
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+document.getElementById('apiBridgeModalClose')?.addEventListener('click', () => {
+  document.getElementById('apiBridgeModal')?.setAttribute('aria-hidden', 'true');
+});
+document.querySelector('.api-bridge-modal-backdrop')?.addEventListener('click', () => {
+  document.getElementById('apiBridgeModal')?.setAttribute('aria-hidden', 'true');
+});
+
+function buildApiExplorerCurlFromApi(api){
+  if(!api) return '';
+  const API_BASE = (window.GAAZOO_API || 'http://127.0.0.1:8000').replace(/\/$/, '');
+  let path = api.path;
+  if(api.pathParam && path.includes('{'+api.pathParam+'}')) {
+    path = path.replace('{'+api.pathParam+'}', api.pathParam.toUpperCase() + '_VALUE');
+  }
+  let url = API_BASE + path;
+  const method = (api.method || 'GET').toUpperCase();
+  const parts = ['curl -X ' + method + " '" + url + "'"];
+  if(api.multipart && api.multipartFields){
+    api.multipartFields.forEach(f => {
+      if(f.type === 'file') parts.push('-F "' + f.name + '=@/path/to/your/file"');
+      else {
+        const val = (f.default || '').trim();
+        if(val) parts.push('-F "' + f.name + '=' + String(val).replace(/"/g, '\\"') + '"');
+      }
+    });
+  } else if(api.useQuery && api.queryExample){
+    const params = new URLSearchParams();
+    api.queryExample.split(/\n/).forEach(line => {
+      const eq = line.indexOf('=');
+      if(eq > 0) params.set(line.slice(0, eq).trim(), line.slice(eq+1).trim());
+    });
+    const qs = params.toString();
+    if(qs) parts[0] = "curl -X " + method + " '" + url + (url.includes('?') ? '&' : '?') + qs + "'";
+  } else if((method === 'GET' || method === 'DELETE') && api.queryExample){
+    const params = new URLSearchParams();
+    api.queryExample.split(/\n/).forEach(line => {
+      const eq = line.indexOf('=');
+      if(eq > 0) params.set(line.slice(0, eq).trim(), line.slice(eq+1).trim());
+    });
+    const qs = params.toString();
+    if(qs) parts[0] = "curl -X " + method + " '" + url + (url.includes('?') ? '&' : '?') + qs + "'";
+  } else if(api.payload && typeof api.payload === 'object' && !api.multipart){
+    const body = JSON.stringify(api.payload);
+    const escaped = body.replace(/'/g, "'\\''");
+    parts.push("-H 'Content-Type: application/json' -d '" + escaped + "'");
+  }
+  return parts.join(' \\\n  ') + "\n# For session (e.g. /profile/*): add -b 'gaazoo_session=YOUR_COOKIE'";
+}
+
+function buildApiExplorerCurl(){
+  if(currentApiBridgeIndex < 0) return '';
+  const api = API_BRIDGE_LIST[currentApiBridgeIndex];
+  const API_BASE = (window.GAAZOO_API || 'http://127.0.0.1:8000').replace(/\/$/, '');
+  let path = api.path;
+  if(api.pathParam && path.includes('{'+api.pathParam+'}')) {
+    path = path.replace('{'+api.pathParam+'}', api.pathParam.toUpperCase() + '_VALUE');
+  }
+  let url = API_BASE + path;
+  const method = (api.method || 'GET').toUpperCase();
+  const parts = ['curl -X ' + method + " '" + url + "'"];
+
+  if(api.multipart && api.multipartFields){
+    const formEl = document.getElementById('apiBridgeMultipartForm');
+    api.multipartFields.forEach(f => {
+      const input = formEl && formEl.querySelector('[data-apibridge-field="'+f.name+'"]');
+      if(!input) return;
+      if(f.type === 'file'){
+        const fname = (input.files && input.files[0] && input.files[0].name) ? input.files[0].name : '/path/to/your/file';
+        parts.push('-F "' + f.name + '=@' + fname + '"');
+      } else {
+        const val = (input.value || f.default || '').trim();
+        if(val) parts.push('-F "' + f.name + '=' + String(val).replace(/"/g, '\\"') + '"');
+      }
+    });
+  } else if(api.useQuery || method === 'GET' || method === 'DELETE'){
+    const queryInput = document.getElementById('apiBridgeQueryInput');
+    const raw = (queryInput && queryInput.value || '').trim();
+    if(raw){
+      const params = new URLSearchParams();
+      raw.split(/\n/).forEach(line => {
+        const eq = line.indexOf('=');
+        if(eq > 0) params.set(line.slice(0, eq).trim(), line.slice(eq+1).trim());
+      });
+      const qs = params.toString();
+      if(qs) parts[0] = "curl -X " + method + " '" + url + (url.includes('?') ? '&' : '?') + qs + "'";
+    }
+  } else {
+    const payloadInput = document.getElementById('apiBridgePayloadInput');
+    const body = (payloadInput && payloadInput.value || '').trim();
+    if(body) {
+      try {
+        JSON.parse(body);
+        const escaped = body.replace(/'/g, "'\\''");
+        parts.push("-H 'Content-Type: application/json' -d '" + escaped + "'");
+      } catch(_){}
+    }
+  }
+  const curlCmd = parts.join(' \\\n  ');
+  return curlCmd + "\n# For session (e.g. /profile/*): add -b 'gaazoo_session=YOUR_COOKIE'";
+}
+
+document.getElementById('apiBridgeExecuteBtn')?.addEventListener('click', async () => {
+  if(currentApiBridgeIndex < 0) return;
+  const api = API_BRIDGE_LIST[currentApiBridgeIndex];
+  const API_BASE = window.GAAZOO_API || '';
+  const statusEl = document.getElementById('apiBridgeExecuteStatus');
+  const resultWrap = document.getElementById('apiBridgeResultWrap');
+  const resultEl = document.getElementById('apiBridgeResult');
+  let path = api.path;
+  const pathParamEl = document.querySelector('[data-api-bridge-path-param]');
+  if(api.pathParam && path.includes('{'+api.pathParam+'}')) {
+    const asin = prompt('Enter value for '+api.pathParam+':');
+    if(asin != null) path = path.replace('{'+api.pathParam+'}', encodeURIComponent(asin));
+  }
+  statusEl.textContent = 'Sending…';
+  resultWrap.style.display = 'none';
+  try {
+    let url = API_BASE + path;
+    let options = { method: api.method || 'GET', credentials: 'include' };
+    if(api.multipart && api.multipartFields){
+      const formEl = document.getElementById('apiBridgeMultipartForm');
+      const fd = new FormData();
+      let hasFile = false;
+      api.multipartFields.forEach(f => {
+        const input = formEl && formEl.querySelector('[data-apibridge-field="'+f.name+'"]');
+        if(!input) return;
+        if(f.type === 'file'){
+          if(input.files && input.files[0]){ fd.append(f.name, input.files[0]); hasFile = true; }
+          else if(f.required){ statusEl.textContent = 'Please select a file for ' + f.name; return; }
+        } else {
+          const val = (input.value || f.default || '').trim();
+          if(val) fd.append(f.name, val);
+        }
+      });
+      if(api.multipartFields.some(f => f.type === 'file' && f.required) && !hasFile){
+        statusEl.textContent = 'Please select the required file.';
+        return;
+      }
+      options.body = fd;
+    } else if(api.useQuery || api.method === 'GET' || api.method === 'DELETE'){
+      const queryInput = document.getElementById('apiBridgeQueryInput');
+      const raw = (queryInput && queryInput.value || '').trim();
+      if(raw){
+        const params = new URLSearchParams();
+        raw.split(/\n/).forEach(line => {
+          const eq = line.indexOf('=');
+          if(eq > 0) params.set(line.slice(0, eq).trim(), line.slice(eq+1).trim());
+        });
+        const qs = params.toString();
+        if(qs) url += (url.includes('?') ? '&' : '?') + qs;
+      }
+    } else {
+      const payloadInput = document.getElementById('apiBridgePayloadInput');
+      let body = (payloadInput && payloadInput.value || '').trim();
+      if(body) {
+        try { JSON.parse(body); } catch(e) { statusEl.textContent = 'Invalid JSON'; return; }
+        options.body = body;
+        options.headers = { 'Content-Type': 'application/json' };
+      }
+    }
+    const r = await fetch(url, options);
+    const contentType = r.headers.get('content-type') || '';
+    let text = await r.text();
+    let result = text;
+    if(contentType.includes('application/json')){
+      try { result = JSON.stringify(JSON.parse(text), null, 2); } catch(_){}
+    }
+    resultEl.textContent = (r.ok ? '' : 'Status: ' + r.status + ' ' + r.statusText + '\n\n') + result;
+    resultWrap.style.display = 'block';
+    statusEl.textContent = r.ok ? 'Done' : 'Error ' + r.status;
+    statusEl.style.color = r.ok ? 'var(--neo)' : 'var(--red)';
+  } catch(e) {
+    resultEl.textContent = String(e.message || e);
+    resultWrap.style.display = 'block';
+    statusEl.textContent = 'Request failed';
+    statusEl.style.color = 'var(--red)';
+  }
 });
 
 /* ──────────────────────────────────────────────
@@ -1776,8 +2286,8 @@ function updateLoad3dButton(){
     const fd=new FormData();
     fd.append('file',file);
     fd.append('obj_unit',unit||'cm');
-    const base=window.location.origin||'http://127.0.0.1:5000';
-    fetch(base+'/3d-dimensions',{method:'POST',body:fd}).then(r=>r.json()).then(data=>{
+    const base=window.GAAZOO_API||'http://127.0.0.1:8000';
+    fetch((base.replace(/\/$/,''))+'/3d-dimensions',{method:'POST',body:fd}).then(r=>r.json()).then(data=>{
       if(data.w!=null&&data.h!=null&&data.d!=null&&dimsEl)
         dimsEl.textContent='Dimensions: '+data.w+' × '+data.h+' × '+data.d+' '+(data.unit||'cm')+' (W × H × D)';
       else if(data.error&&dimsEl) dimsEl.textContent='Dimensions: '+data.error;
