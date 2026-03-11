@@ -4,19 +4,32 @@ modules/image_analyser.py
 Analyses uploaded room images via the Vanilla Prompt API (Template 15).
 Each image is sent individually; results are aggregated by the caller.
 
-Replaces the old direct Gemini Vision approach.
+Accepts a list of ImageData objects (see dataclass below) — framework-agnostic,
+works with both Flask FileStorage and FastAPI UploadFile (bytes already read).
 """
 
-from flask import current_app
+import logging
+from dataclasses import dataclass
+
 from modules.gemini_ai import analyse_single_image_vanilla
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ImageData:
+    """Lightweight container for an uploaded image — replaces werkzeug FileStorage."""
+    filename: str
+    content: bytes
+    content_type: str
 
 
 def analyse_images(image_files: list) -> list[dict]:
     """
-    Analyse a list of werkzeug FileStorage objects using Template 15.
+    Analyse a list of ImageData objects using Template 15.
 
     Args:
-        image_files: List of werkzeug FileStorage objects from request.files
+        image_files: List of ImageData (or any object with .filename, .content, .content_type)
 
     Returns:
         List of analysis dicts — one per image.
@@ -27,19 +40,18 @@ def analyse_images(image_files: list) -> list[dict]:
 
     for f in image_files:
         try:
-            img_bytes = f.read()
-            f.seek(0)
+            img_bytes = f.content
             mimetype  = f.content_type or "image/jpeg"
 
             result = analyse_single_image_vanilla(f.filename, img_bytes, mimetype)
             results.append(result)
 
-            current_app.logger.info(
+            logger.info(
                 f"Analysed {f.filename}: styles={result.get('styles')} "
                 f"confidence={result.get('confidence')}"
             )
         except Exception as e:
-            current_app.logger.warning(f"Failed to analyse {f.filename}: {e}")
+            logger.warning(f"Failed to analyse {f.filename}: {e}")
             results.append({
                 "filename": f.filename, "error": str(e),
                 "styles": [], "dominant_colours": [], "materials": [],

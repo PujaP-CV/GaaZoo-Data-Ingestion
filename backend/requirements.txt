@@ -1,12 +1,16 @@
 # GaaZoo — Unified backend dependencies
+# Framework: FastAPI (served via uvicorn)
+# Install : pip install -r requirements.txt
 
 # ── Web framework ──────────────────────────────────────────────────────
-flask>=2.0
-flask-cors>=4.0
-python-dotenv>=1.0
+fastapi>=0.111
+uvicorn[standard]>=0.30       # ASGI server (dev + prod)
+python-multipart>=0.0.9       # required for FastAPI form / file uploads
+itsdangerous>=2.0             # session signing (used by starlette SessionMiddleware)
 
 # ── Image Pipeline ─────────────────────────────────────────────────────
 requests>=2.28
+python-dotenv>=1.0
 neo4j>=5.0
 google-search-results>=2.4
 Pillow>=9.0
@@ -17,3 +21,6 @@ numpy>=1.24
 # ── DPP (Design Personality Profile) ──────────────────────────────────
 google-generativeai>=0.8
 openpyxl>=3.1
+
+# ── Production ─────────────────────────────────────────────────────────
+gunicorn>=21.0                # optional: gunicorn -k uvicorn.workers.UvicornWorker

@@ -5,31 +5,35 @@ Spotify Web API calls for GaaZoo: user playlists, playlist tracks, audio feature
 Uses access token from session (obtain via spotify_auth.get_valid_spotify_token).
 """
 
+import logging
+
 import requests
-from flask import current_app, session
-from modules.spotify_auth import get_valid_spotify_token, refresh_access_token
+from modules.spotify_auth import refresh_access_token
+
+logger = logging.getLogger(__name__)
 
 SPOTIFY_API_BASE = "https://api.spotify.com/v1"
 
 
-def _get_token():
-    """Return valid access token; refresh if needed."""
-    token = session.get("spotify_access_token")
+def _get_token(session: dict = None) -> str | None:
+    """Return valid token from the provided session dict, refreshing if needed."""
+    if not session:
+        return None
+    token   = session.get("spotify_access_token")
     refresh = session.get("spotify_refresh_token")
     if token:
         return token
     if refresh:
         try:
-            data = refresh_access_token(refresh)
+            data      = refresh_access_token(refresh)
             new_token = data.get("access_token")
             if new_token:
                 session["spotify_access_token"] = new_token
                 if data.get("refresh_token"):
                     session["spotify_refresh_token"] = data["refresh_token"]
-                session.modified = True
                 return new_token
         except Exception as e:
-            current_app.logger.warning(f"Spotify token refresh failed: {e}")
+            logger.warning(f"Spotify token refresh failed: {e}")
     return None
 
 
@@ -60,7 +64,7 @@ def fetch_user_playlists(token: str = None):
                 r = _request("GET", url, token)
         if r.status_code != 200:
             last_status = r.status_code
-            current_app.logger.warning(f"Spotify playlists API {r.status_code}: {r.text[:200]}")
+            logger.warning(f"Spotify playlists API {r.status_code}: {r.text[:200]}")
             break
         data = r.json()
         for item in data.get("items", []):
@@ -97,7 +101,7 @@ def fetch_playlist_tracks(token: str, playlist_id: str, max_tracks: int = 100):
                 token = new_token
                 r = _request("GET", url, token)
         if r.status_code != 200:
-            current_app.logger.warning(f"Spotify playlist tracks {r.status_code}: {r.text[:200]}")
+            logger.warning(f"Spotify playlist tracks {r.status_code}: {r.text[:200]}")
             return out, r.status_code
         data = r.json()
         for item in data.get("items", []):
@@ -136,7 +140,7 @@ def fetch_audio_features(token: str, track_ids: list) -> list:
         if new_token and new_token != token:
             r = _request("GET", url, new_token)
     if r.status_code != 200:
-        current_app.logger.warning(f"Spotify audio-features {r.status_code}: {r.text[:200]}")
+        logger.warning(f"Spotify audio-features {r.status_code}: {r.text[:200]}")
         return []
     data = r.json()
     return data.get("audio_features") or []

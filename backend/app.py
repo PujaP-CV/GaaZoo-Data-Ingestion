@@ -1,70 +1,124 @@
 """
-GaaZoo — Unified Flask Application
-Combines three modules into one server on port 5000:
+GaaZoo — Unified FastAPI Application
+Framework: FastAPI (NOT Flask)
+
+Three modules on one server (default port 8000):
   1. Design Personality Profile  → /auth/*, /profile/*, /ai/*
   2. Data Ingestion Pipeline     → /api/fetch-images, /api/catalog/*
   3. 3D Catalog Viewer           → /generate-3d, /proxy-glb, /api/convert-*
+
+Run locally:
+  cd backend
+  uvicorn app:app --reload --port 8000
+
+Frontend (separate):
+  cd frontend
+  python -m http.server 3000
 """
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS
+import logging
+import os
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 from config import Config, DATA_DIR, DIR_2D, DIR_3D
 from modules.catalog_db import init_db
 
-# ── Blueprints ─────────────────────────────────────────────────────────
-from routes.auth_routes    import auth_bp
-from routes.profile_routes import profile_bp
-from routes.ai_routes      import ai_bp
-from routes.catalog_routes import catalog_bp
-from routes.viewer_routes  import viewer_bp
+from routes.auth_routes    import router as auth_router
+from routes.profile_routes import router as profile_router
+from routes.ai_routes      import router as ai_router
+from routes.catalog_routes import router as catalog_router
+from routes.viewer_routes  import router as viewer_router
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s — %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
-def create_app() -> Flask:
-    app = Flask(__name__, static_folder=None)
-    app.config.from_object(Config)
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="GaaZoo Unified API",
+        description="Design Personality Profile · Data Ingestion · 3D Catalog Viewer",
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+    )
 
-    CORS(app, supports_credentials=True, origins=["http://localhost:5000", "http://127.0.0.1:5000"])
+    # ── Session middleware ──────────────────────────────────────────────
+    # Uses signed cookies (itsdangerous) — same mechanism as Flask sessions.
+    # Added first so it runs closest to the route handlers (innermost).
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=Config.SECRET_KEY,
+        session_cookie="gaazoo_session",   # unique name avoids stale Flask cookies
+        same_site=Config.SESSION_SAME_SITE,
+        https_only=Config.SESSION_HTTPS_ONLY,
+        max_age=Config.SESSION_MAX_AGE,
+    )
 
-    # ── Neo4j lazy init — skip for OAuth callbacks and static serving ──
-    @app.before_request
-    def _ensure_db():
-        skip_prefixes = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known",
-                         "/generate-3d", "/proxy-glb", "/scale-3d", "/3d-dimensions")
-        if any(request.path == p or request.path.startswith(p + "/") for p in skip_prefixes):
-            return
-        if request.path == "/" or request.path.startswith("/static"):
-            return
+    # ── CORS ────────────────────────────────────────────────────────────
+    # Added second so it is outermost (handles preflight before session decoding).
+    _default_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        Config.FRONTEND_URL,
+    ]
+    _extra = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+    _origins = list(dict.fromkeys(_default_origins + _extra))
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # ── Neo4j lazy-init middleware ─────────────────────────────────────
+    # Attempts to connect to Neo4j for catalog/pipeline routes.
+    # If Neo4j is unavailable, the request proceeds — each catalog route
+    # handles the missing DB gracefully (returns empty list / friendly error)
+    # instead of blocking with a 503.
+    _SKIP_DB = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known",
+                "/generate-3d", "/proxy-glb", "/scale-3d", "/3d-dimensions", "/dpp", "/docs", "/redoc",
+                "/openapi.json", "/api/files")
+
+    @app.middleware("http")
+    async def ensure_db(request: Request, call_next):
+        path = request.url.path
+        if any(path == p or path.startswith(p + "/") for p in _SKIP_DB):
+            return await call_next(request)
         try:
             init_db()
         except Exception as e:
-            try:
-                from neo4j.exceptions import AuthError, ServiceUnavailable
-                if isinstance(e, AuthError):
-                    return jsonify({"error": "Neo4j authentication failed. Check NEO4J_USER and NEO4J_PASSWORD in .env"}), 503
-                if isinstance(e, ServiceUnavailable):
-                    return jsonify({"error": "Neo4j is not reachable. Start Neo4j and ensure NEO4J_URI is correct in .env"}), 503
-            except ImportError:
-                pass
-            raise
+            # Log the warning but let the request continue — routes decide how to handle it
+            logger.warning(f"Neo4j unavailable ({type(e).__name__}): {e}")
+        return await call_next(request)
 
-    # ── Register blueprints ────────────────────────────────────────────
-    app.register_blueprint(auth_bp,    url_prefix="/auth")
-    app.register_blueprint(profile_bp, url_prefix="/profile")
-    app.register_blueprint(ai_bp,      url_prefix="/ai")
-    app.register_blueprint(catalog_bp)   # /api/catalog/*, /api/fetch-images, /api/add-local-vendor, /api/convert-*
-    app.register_blueprint(viewer_bp)    # /, /proxy-glb, /generate-3d, /api/files/*
+    # ── Routers ─────────────────────────────────────────────────────────
+    app.include_router(auth_router,    prefix="/auth",    tags=["Auth"])
+    app.include_router(profile_router, prefix="/profile", tags=["Profile"])
+    app.include_router(ai_router,      prefix="/ai",      tags=["AI"])
+    app.include_router(catalog_router,                    tags=["Catalog"])
+    app.include_router(viewer_router,                     tags=["Viewer"])
 
-    @app.route("/health")
-    def health():
-        return jsonify({"status": "ok", "service": "GaaZoo Unified API"})
+    # ── Health check ────────────────────────────────────────────────────
+    @app.get("/health", tags=["Health"])
+    async def health():
+        return {"status": "ok", "service": "GaaZoo Unified API", "framework": "FastAPI"}
 
     return app
 
 
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
-    # use_reloader=False: reloader watches imported modules (e.g. trimesh -> unittest);
-    # when scale_model runs, that can trigger a "change" on Windows and restart the server
-    # mid-request, causing "Failed to fetch" on /scale-3d. Restart the process manually after code changes.
-    app.run(debug=True, port=5000, use_reloader=False)
+    import uvicorn
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True, reload_excludes=["*.glb", "*.obj"])

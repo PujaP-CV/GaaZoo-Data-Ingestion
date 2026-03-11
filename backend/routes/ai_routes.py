@@ -2,90 +2,77 @@
 routes/ai_routes.py
 --------------------
 Gemini AI design routes:
-  POST /ai/suggest        — generate room design suggestions
-  POST /ai/narrative      — generate human-readable profile narrative
-  POST /ai/ask            — ask a free-form design question
+  POST /ai/suggest    — generate room design suggestions
+  POST /ai/narrative  — generate human-readable profile narrative
+  POST /ai/ask        — ask a free-form design question
 """
 
-from flask import Blueprint, jsonify, request, session, current_app
+import logging
+
+from fastapi import APIRouter, HTTPException, Request
+
 from modules.gemini_ai import (
     generate_design_suggestions,
     generate_profile_narrative,
     answer_design_question,
 )
 
-ai_bp = Blueprint("ai", __name__)
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 
-def _require_profile(f):
-    """Decorator — return 400 if no DPP has been built yet."""
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not session.get("dpp"):
-            return jsonify({
-                "error": "No design profile found. Please connect Pinterest and build your profile first."
-            }), 400
-        return f(*args, **kwargs)
-    return decorated
+async def _require_profile(request: Request) -> dict:
+    """Return the stored DPP or raise 400 if not built yet."""
+    dpp = request.session.get("dpp")
+    if not dpp:
+        raise HTTPException(
+            status_code=400,
+            detail="No design profile found. Please connect Pinterest / Spotify and build your profile first.",
+        )
+    return dpp
 
 
-@ai_bp.route("/suggest", methods=["POST"])
-@_require_profile
-def suggest():
-    """
-    Generate room design suggestions based on the user's DPP.
-
-    Request body (JSON):
-        { "room_type": "living room" }   ← optional, defaults to living room
-    """
-    dpp  = session["dpp"]
-    body = request.get_json(silent=True) or {}
+@router.post("/suggest")
+async def suggest(request: Request):
+    """Generate room design suggestions based on the user's DPP."""
+    dpp  = await _require_profile(request)
+    body = await request.json()
     room_type = body.get("room_type", "living room")
 
     try:
         result = generate_design_suggestions(dpp, room_type)
-        return jsonify({"success": True, "result": result})
+        return {"success": True, "result": result}
     except Exception as e:
-        current_app.logger.error(f"AI suggest failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"AI suggest failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@ai_bp.route("/narrative", methods=["POST"])
-@_require_profile
-def narrative():
-    """
-    Generate a warm human-readable description of the user's design personality.
-    """
-    dpp = session["dpp"]
+@router.post("/narrative")
+async def narrative(request: Request):
+    """Generate a warm human-readable description of the user's design personality."""
+    dpp = await _require_profile(request)
 
     try:
         text = generate_profile_narrative(dpp)
-        return jsonify({"success": True, "narrative": text})
+        return {"success": True, "narrative": text}
     except Exception as e:
-        current_app.logger.error(f"AI narrative failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"AI narrative failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@ai_bp.route("/ask", methods=["POST"])
-@_require_profile
-def ask():
-    """
-    Answer a free-form interior design question, personalised to the user's DPP.
-
-    Request body (JSON):
-        { "question": "What sofa should I get?" }
-    """
-    dpp  = session["dpp"]
-    body = request.get_json(silent=True) or {}
+@router.post("/ask")
+async def ask(request: Request):
+    """Answer a free-form interior design question personalised to the user's DPP."""
+    dpp  = await _require_profile(request)
+    body = await request.json()
     question = body.get("question", "").strip()
 
     if not question:
-        return jsonify({"error": "Please provide a question."}), 400
+        raise HTTPException(status_code=400, detail="Please provide a question.")
 
     try:
         answer = answer_design_question(dpp, question)
-        return jsonify({"success": True, "answer": answer})
+        return {"success": True, "answer": answer}
     except Exception as e:
-        current_app.logger.error(f"AI ask failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"AI ask failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

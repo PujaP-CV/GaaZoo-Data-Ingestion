@@ -29,10 +29,14 @@ GaaZoo Template IDs in Excel:
 import base64
 import io
 import json
+import logging
 import re
 
 import requests
-from flask import current_app
+
+from config import Config
+
+logger = logging.getLogger(__name__)
 
 # ── Vanilla API core ──────────────────────────────────────────────────────────
 
@@ -65,7 +69,7 @@ def _call_vanilla(
     for filename, img_bytes, mimetype in image_bytes_list or []:
         files.append(("document_files", (filename, io.BytesIO(img_bytes), mimetype)))
 
-    current_app.logger.info(
+    logger.info(
         f"Vanilla API → template_id={template_id} | llm={llm} | "
         f"images={len(image_bytes_list or [])} | params={list(parameters.keys())}"
     )
@@ -73,11 +77,11 @@ def _call_vanilla(
     try:
         # Debug: log full outgoing payload (parameters are JSON string)
         try:
-            current_app.logger.debug(
+            logger.debug(
                 f"Vanilla API request data: {json.dumps(data, ensure_ascii=False)}"
             )
         except Exception:
-            current_app.logger.debug(f"Vanilla API request data (raw): {data}")
+            logger.debug(f"Vanilla API request data (raw): {data}")
 
         resp = requests.post(
             VANILLA_API_URL,
@@ -85,7 +89,7 @@ def _call_vanilla(
             files=files if files else None,
             timeout=120,
         )
-        current_app.logger.debug(f"Vanilla API response status: {resp.status_code}")
+        logger.debug(f"Vanilla API response status: {resp.status_code}")
     except requests.exceptions.Timeout:
         raise Exception("Vanilla API timed out (120s)")
     except requests.exceptions.ConnectionError:
@@ -93,27 +97,27 @@ def _call_vanilla(
 
     if not resp.ok:
         # Log full error body for diagnostics
-        current_app.logger.error(f"Vanilla API error {resp.status_code}: {resp.text}")
+        logger.error(f"Vanilla API error {resp.status_code}: {resp.text}")
         raise Exception(f"Vanilla API {resp.status_code}: {resp.text[:300]}")
 
     # Parse response — API returns JSON, extract the LLM text
     try:
         # Log full response text (useful when API returns nested JSON or lists)
         try:
-            current_app.logger.debug(f"Vanilla API response text: {resp.text}")
+            logger.debug(f"Vanilla API response text: {resp.text}")
         except Exception:
-            current_app.logger.debug("Vanilla API response text (unprintable)")
+            logger.debug("Vanilla API response text (unprintable)")
 
         body = resp.json()
         try:
-            current_app.logger.debug(
+            logger.debug(
                 f"Vanilla API response keys: {list(body.keys()) if isinstance(body, dict) else type(body)}"
             )
-            current_app.logger.debug(
+            logger.debug(
                 f"Vanilla API response body: {json.dumps(body, ensure_ascii=False)}"
             )
         except Exception:
-            current_app.logger.debug(f"Vanilla API response body (raw): {body}")
+            logger.debug(f"Vanilla API response body (raw): {body}")
         # Try common response keys in order
         for key in (
             "result",
@@ -182,9 +186,9 @@ def analyse_single_image_vanilla(
             template_name="GaaZoo Image Analyser",
             parameters={},
             image_bytes_list=[(filename, img_bytes, mimetype)],
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
-        current_app.logger.debug(f"Vanilla API raw response (truncated): {raw[:200]}")
+        logger.debug(f"Vanilla API raw response (truncated): {raw[:200]}")
         data = _parse_json_response(raw)
         # Normalise: API sometimes returns a list [ {llm, executed_prompt, response: "..."} ]
         # and sometimes returns a dict with structured keys. Handle both.
@@ -240,7 +244,7 @@ def analyse_single_image_vanilla(
             or None,
         }
     except Exception as e:
-        current_app.logger.warning(f"Image analysis failed [{filename}]: {e}")
+        logger.warning(f"Image analysis failed [{filename}]: {e}")
         return {
             "filename": filename,
             "error": str(e),
@@ -277,7 +281,7 @@ def analyse_single_image_with_questions(
             template_name=template_name,
             parameters={},
             image_bytes_list=[(filename, img_bytes, mimetype)],
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
 
@@ -325,7 +329,7 @@ def analyse_single_image_with_questions(
         }
 
     except Exception as e:
-        current_app.logger.warning(
+        logger.warning(
             f"Image question analysis failed [{filename}] (template {template_id}): {e}"
             " — falling back to Template 15"
         )
@@ -408,7 +412,7 @@ def predict_material_shape_dna(aggregated_signals: dict) -> dict:
             template_id=21,
             template_name="GaaZoo DNA Predictor",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         print("raw dna response.......................\n", data)
@@ -442,11 +446,11 @@ def predict_material_shape_dna(aggregated_signals: dict) -> dict:
         shape_dna = {k: _clamp(sd_raw.get(k, 0.5)) for k in defaults["shape_dna"]}
 
         result = {"material_dna": material_dna, "shape_dna": shape_dna}
-        current_app.logger.info("DNA prediction succeeded via Template 21")
+        logger.info("DNA prediction succeeded via Template 21")
         return result
 
     except Exception as e:
-        current_app.logger.warning(
+        logger.warning(
             f"DNA prediction failed (Template 21): {e} — using neutral 0.5 defaults"
         )
         return defaults
@@ -476,7 +480,7 @@ def spotify_mood_vector(
             template_id=24,
             template_name="GaaZoo Spotify → Mood Vector",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -500,7 +504,7 @@ def spotify_mood_vector(
         keys = ("calm_energetic", "warm_edgy", "minimal_maximal", "vintage_modern")
         return {k: _clamp(data.get(k, 0.5)) for k in keys}
     except Exception as e:
-        current_app.logger.warning(f"Spotify mood vector (Template 24) failed: {e}")
+        logger.warning(f"Spotify mood vector (Template 24) failed: {e}")
         return {k: 0.5 for k in ("calm_energetic", "warm_edgy", "minimal_maximal", "vintage_modern")}
 
 
@@ -521,7 +525,7 @@ def spotify_mood_to_attributes(mood_vector: dict) -> dict:
             template_id=25,
             template_name="GaaZoo Mood Vector → Interior Attributes",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -548,7 +552,7 @@ def spotify_mood_to_attributes(mood_vector: dict) -> dict:
         data.setdefault("dominant_colours", normalised)
         return data
     except Exception as e:
-        current_app.logger.warning(f"Spotify mood→attributes (Template 25) failed: {e}")
+        logger.warning(f"Spotify mood→attributes (Template 25) failed: {e}")
         return {
             "styles": ["Contemporary"],
             "materials": ["linen", "wood"],
@@ -590,7 +594,7 @@ def spotify_question_from_signals(styles: list, mood_tags: list, playlist_names:
             template_id=26,
             template_name="GaaZoo Spotify Question from Signals",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         print("Template 26 — raw response:", raw[:300] if isinstance(raw, str) else raw)
         data = _parse_json_response(raw)
@@ -612,7 +616,7 @@ def spotify_question_from_signals(styles: list, mood_tags: list, playlist_names:
         opts = [str(o).strip() for o in opts if str(o).strip()]
         return {"question": q, "options": opts[:4]}
     except Exception as e:
-        current_app.logger.warning(f"Spotify question (Template 26) failed: {e}")
+        logger.warning(f"Spotify question (Template 26) failed: {e}")
         print("Template 26 — ERROR:", e)
         return {"question": "", "options": []}
 
@@ -634,7 +638,7 @@ def spotify_design_signals(playlist_names: str, tracks_summary: str) -> dict:
             template_id=22,
             template_name="GaaZoo Spotify Design Signals",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -661,7 +665,7 @@ def spotify_design_signals(playlist_names: str, tracks_summary: str) -> dict:
         data.setdefault("dominant_colours", normalised)
         return data
     except Exception as e:
-        current_app.logger.warning(f"Spotify design signals (Template 22) failed: {e}")
+        logger.warning(f"Spotify design signals (Template 22) failed: {e}")
         return {
             "styles": ["Contemporary"],
             "materials": ["linen", "wood"],
@@ -729,7 +733,7 @@ def predict_material_shape_dna_spotify(aggregated_signals: dict) -> dict:
             template_id=23,
             template_name="GaaZoo Spotify DNA Predictor",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -755,7 +759,7 @@ def predict_material_shape_dna_spotify(aggregated_signals: dict) -> dict:
         shape_dna = {k: _clamp(sd_raw.get(k, 0.5)) for k in SPOTIFY_SHAPE_DNA_KEYS}
         return {"material_dna": material_dna, "shape_dna": shape_dna}
     except Exception as e:
-        current_app.logger.warning(
+        logger.warning(
             f"Spotify DNA prediction (Template 23) failed: {e} — using defaults"
         )
         return defaults
@@ -782,11 +786,11 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
     try:
         # Debug: log full enrichment parameters before calling Template 16
         try:
-            current_app.logger.debug(
+            logger.debug(
                 f"Template 16 — enrichment parameters: {json.dumps(params, ensure_ascii=False)}"
             )
         except Exception:
-            current_app.logger.debug(
+            logger.debug(
                 f"Template 16 — enrichment parameters (raw): {params}"
             )
 
@@ -816,7 +820,7 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
                             content = base64.b64decode(b64)
                             # Skip very large images
                             if len(content) > 2 * 1024 * 1024:
-                                current_app.logger.debug(
+                                logger.debug(
                                     f"Skipping large data-url image {b.get('name')} ({len(content)} bytes)"
                                 )
                                 continue
@@ -824,7 +828,7 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
                             image_bytes_list.append((fname, content, mtype))
                             continue
                         except Exception as e:
-                            current_app.logger.debug(
+                            logger.debug(
                                 f"Failed to decode data-url image: {e}"
                             )
                             continue
@@ -838,7 +842,7 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
                             content = r.content
                             # Skip very large images
                             if len(content) > 2 * 1024 * 1024:
-                                current_app.logger.debug(
+                                logger.debug(
                                     f"Skipping large board image {s} ({len(content)} bytes)"
                                 )
                                 continue
@@ -849,7 +853,7 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
                             mtype = r.headers.get("content-type", "image/jpeg")
                             image_bytes_list.append((fname, content, mtype))
                         except Exception as e:
-                            current_app.logger.debug(
+                            logger.debug(
                                 f"Failed to download board image {s}: {e}"
                             )
                             continue
@@ -864,11 +868,11 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
             template_name="GaaZoo DPP Enrichment",
             parameters=params,
             # image_bytes_list=image_bytes_list if image_bytes_list else None,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
 
         # Log raw return and attempt to extract the actual DPP JSON
-        current_app.logger.debug(f"Template 16 — raw API returned string: {raw}")
+        logger.debug(f"Template 16 — raw API returned string: {raw}")
 
         parsed = None
         try:
@@ -878,17 +882,17 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
             try:
                 parsed = json.loads(raw)
             except Exception:
-                current_app.logger.debug(
+                logger.debug(
                     "Template 16 — could not parse top-level API response"
                 )
 
         try:
             try:
-                current_app.logger.debug(
+                logger.debug(
                     f"Template 16 — parsed enrichment JSON: {json.dumps(parsed, ensure_ascii=False)}"
                 )
             except Exception:
-                current_app.logger.debug(
+                logger.debug(
                     f"Template 16 — parsed enrichment (raw): {parsed}"
                 )
 
@@ -1004,14 +1008,14 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
                 "ai_prompt_injection", raw_dpp.get("ai_prompt_injection", "")
             )
             raw_dpp["ai_enriched"] = True
-            current_app.logger.info("DPP enrichment succeeded via Template 16")
+            logger.info("DPP enrichment succeeded via Template 16")
 
         except Exception as e:
-            current_app.logger.warning(f"DPP enrichment failed to extract DPP: {e}")
+            logger.warning(f"DPP enrichment failed to extract DPP: {e}")
             raw_dpp["ai_enriched"] = False
 
     except Exception as e:
-        current_app.logger.warning(f"DPP enrichment failed: {e} — keeping raw DPP")
+        logger.warning(f"DPP enrichment failed: {e} — keeping raw DPP")
         raw_dpp["ai_enriched"] = False
 
     return raw_dpp
@@ -1209,7 +1213,7 @@ def generate_design_suggestions(dpp: dict, room_type: str = "living room") -> di
             template_id=17,
             template_name="GaaZoo Design Suggestions",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
         return {
             "room_type": room_type,
@@ -1217,7 +1221,7 @@ def generate_design_suggestions(dpp: dict, room_type: str = "living room") -> di
             "dpp_summary": dpp.get("ai_prompt_injection", ""),
         }
     except Exception as e:
-        current_app.logger.error(f"Design suggestions failed: {e}")
+        logger.error(f"Design suggestions failed: {e}")
         raise
 
 
@@ -1263,8 +1267,8 @@ def answer_design_question(dpp: dict, question: str) -> str:
             template_id=18,
             template_name="GaaZoo Design Q&A",
             parameters=params,
-            llm=current_app.config.get("VANILLA_LLM", "openai"),
+            llm=Config().get("VANILLA_LLM", "openai"),
         )
     except Exception as e:
-        current_app.logger.error(f"Design Q&A failed: {e}")
+        logger.error(f"Design Q&A failed: {e}")
         raise
