@@ -76,11 +76,10 @@ def scale_model(
         sx = sy = sz = scale_factor
         mode = "scale"
     else:
-        # Resize: force dimensions — each axis independent; missing axes use average
-        avg = sum(provided.values()) / len(provided)
-        sx = provided.get("x", avg)
-        sy = provided.get("y", avg)
-        sz = provided.get("z", avg)
+        # Resize: only the provided axes are scaled to target; missing axes stay unchanged (scale 1.0)
+        sx = provided.get("x", 1.0)
+        sy = provided.get("y", 1.0)
+        sz = provided.get("z", 1.0)
         mode = "resize"
 
     scale_matrix = np.diag([sx, sy, sz, 1.0])
@@ -113,4 +112,76 @@ def scale_model(
             "z": round(sz, 5),
         },
         "unit": unit,
+    }
+
+
+def scale_model_by_percent(
+    input_path: str,
+    output_path: str,
+    percent: float,
+    direction: str = "increase",
+) -> dict:
+    """
+    Scale a GLB/OBJ model by a percentage (uniform scale on all axes).
+    direction: "increase" -> factor = 1 + percent/100; "decrease" -> factor = 1 - percent/100.
+    """
+    try:
+        import trimesh
+    except ImportError:
+        raise ImportError(
+            "trimesh is required for 3D scaling. "
+            "Install it with: pip install trimesh"
+        )
+    percent = float(percent)
+    if direction and str(direction).strip().lower() == "decrease":
+        percent = min(percent, 99.99)
+        factor = 1.0 - (percent / 100.0)
+    else:
+        factor = 1.0 + (percent / 100.0)
+    if factor <= 0:
+        raise ValueError("Scale factor would be non-positive. Use a smaller decrease %.")
+    mesh = trimesh.load(str(input_path))
+    bounds = mesh.bounds
+    if bounds is None:
+        raise ValueError("Model has no geometry (empty bounding box).")
+    orig = bounds[1] - bounds[0]
+    orig_w, orig_h, orig_d = float(orig[0]), float(orig[1]), float(orig[2])
+    scale_matrix = np.diag([factor, factor, factor, 1.0])
+    mesh.apply_transform(scale_matrix)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    mesh.export(str(output_path))
+    new_bounds = mesh.bounds
+    new_size = new_bounds[1] - new_bounds[0]
+    return {
+        "mode": "scale",
+        "original": {"w": round(orig_w * 100, 2), "h": round(orig_h * 100, 2), "d": round(orig_d * 100, 2)},
+        "scaled": {
+            "w": round(float(new_size[0]) * 100, 2),
+            "h": round(float(new_size[1]) * 100, 2),
+            "d": round(float(new_size[2]) * 100, 2),
+        },
+        "scale_factors": {"x": round(factor, 5), "y": round(factor, 5), "z": round(factor, 5)},
+        "unit": "cm",
+        "scale_percent": round(percent, 2),
+        "scale_direction": direction.strip().lower() if direction else "increase",
+    }
+
+
+def get_model_dimensions(input_path: str, unit: str = "cm") -> dict:
+    """Load a GLB/OBJ and return its bounding box dimensions in the given unit."""
+    try:
+        import trimesh
+    except ImportError:
+        raise ImportError("trimesh is required. Install with: pip install trimesh")
+    factor = UNIT_TO_METERS.get((unit or "cm").lower().strip(), 0.01)
+    mesh = trimesh.load(str(input_path))
+    bounds = mesh.bounds
+    if bounds is None:
+        raise ValueError("Model has no geometry (empty bounding box).")
+    size = bounds[1] - bounds[0]
+    return {
+        "w": round(float(size[0]) / factor, 2),
+        "h": round(float(size[1]) / factor, 2),
+        "d": round(float(size[2]) / factor, 2),
+        "unit": unit or "cm",
     }

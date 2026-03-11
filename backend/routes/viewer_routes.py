@@ -12,7 +12,7 @@ import requests
 from flask import Blueprint, Response, jsonify, request, send_from_directory
 
 from config import DATA_DIR, DIR_3D, DIR_3D_SCALED, DIR_TEMP, MESHY_API_KEY, MESHY_BASE
-from modules.model_scaler import scale_model
+from modules.model_scaler import get_model_dimensions, scale_model, scale_model_by_percent
 
 viewer_bp = Blueprint("viewer", __name__)
 
@@ -183,6 +183,32 @@ def generate_3d():
 ALLOWED_3D_EXT = (".glb", ".obj")
 
 
+@viewer_bp.route("/3d-dimensions", methods=["POST"])
+def get_3d_dimensions():
+    """Return bounding box dimensions of an uploaded 3D file (no scaling, no storage)."""
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"error": "No file provided"}), 400
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_3D_EXT:
+        return jsonify({"error": f"Only .glb and .obj are supported. Got: {ext or 'no extension'}"}), 400
+    unit = (request.form.get("obj_unit") or "cm").strip() or "cm"
+    load_id = uuid.uuid4().hex[:12]
+    path = Path(str(DIR_TEMP)) / f"dim_{load_id}_orig{ext}"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        file.save(str(path))
+        dims = get_model_dimensions(str(path), unit=unit)
+        return jsonify(dims)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 @viewer_bp.route("/scale-3d", methods=["POST"])
 def scale_3d():
     """Upload a .glb or .obj file and optionally scale (1 dim) or resize (2–3 dims) to real-world dimensions."""
@@ -192,11 +218,14 @@ def scale_3d():
     ext = Path(file.filename).suffix.lower()
     if ext not in ALLOWED_3D_EXT:
         return jsonify({"error": f"Only .glb and .obj are supported. Got: {ext or 'no extension'}"}), 400
-    obj_width  = request.form.get("obj_width",  "").strip() or None
-    obj_height = request.form.get("obj_height", "").strip() or None
-    obj_depth  = request.form.get("obj_depth",  "").strip() or None
-    obj_unit   = request.form.get("obj_unit",   "cm").strip() or "cm"
-    has_dims   = any([obj_width, obj_height, obj_depth])
+    obj_width   = request.form.get("obj_width",   "").strip() or None
+    obj_height  = request.form.get("obj_height",  "").strip() or None
+    obj_depth   = request.form.get("obj_depth",   "").strip() or None
+    obj_unit    = request.form.get("obj_unit",    "cm").strip() or "cm"
+    scale_pct   = request.form.get("scale_percent", "").strip() or None
+    scale_dir   = (request.form.get("scale_direction", "").strip() or "increase").lower()
+    use_percent = request.form.get("scale_by_percent") == "1" and scale_pct
+    has_dims    = any([obj_width, obj_height, obj_depth]) or use_percent
 
     load_id = uuid.uuid4().hex[:12]
 
@@ -219,13 +248,19 @@ def scale_3d():
     if has_dims:
         scaled_path = Path(str(DIR_3D_SCALED)) / f"load_{load_id}_scaled.glb"
         try:
-            scale_info = scale_model(
-                str(orig_path), str(scaled_path),
-                width  = float(obj_width)  if obj_width  else None,
-                height = float(obj_height) if obj_height else None,
-                depth  = float(obj_depth)  if obj_depth  else None,
-                unit   = obj_unit,
-            )
+            if use_percent:
+                scale_info = scale_model_by_percent(
+                    str(orig_path), str(scaled_path),
+                    percent=float(scale_pct), direction=scale_dir,
+                )
+            else:
+                scale_info = scale_model(
+                    str(orig_path), str(scaled_path),
+                    width  = float(obj_width)  if obj_width  else None,
+                    height = float(obj_height) if obj_height else None,
+                    depth  = float(obj_depth)  if obj_depth  else None,
+                    unit   = obj_unit,
+                )
             scaled_model_url = _file_url(scaled_path)
         except Exception as e:
             scale_info = {"error": str(e)}

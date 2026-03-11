@@ -30,7 +30,7 @@ def create_app() -> Flask:
     @app.before_request
     def _ensure_db():
         skip_prefixes = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known",
-                         "/generate-3d", "/proxy-glb", "/scale-3d")
+                         "/generate-3d", "/proxy-glb", "/scale-3d", "/3d-dimensions")
         if any(request.path == p or request.path.startswith(p + "/") for p in skip_prefixes):
             return
         if request.path == "/" or request.path.startswith("/static"):

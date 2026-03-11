@@ -966,6 +966,13 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
         <p><strong>Click or drag a .glb or .obj file here</strong></p>
         <span class="hint">GLB · OBJ — max 50 MB</span>
         <div id="load3dFileLabel" style="display:none;margin-top:.5rem;font-size:.85rem;color:var(--ink2);font-weight:500"></div>
+        <div id="load3dSelectedPreview" style="display:none;margin-top:1rem;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--bg2)">
+          <div style="padding:.5rem .75rem;font-size:.8rem;color:var(--ink3)">Preview</div>
+          <div style="height:160px;position:relative">
+            <model-viewer id="load3dPreviewMV" style="width:100%;height:100%" camera-controls shadow-intensity="0.5" exposure="1" auto-rotate></model-viewer>
+          </div>
+          <div id="load3dSelectedDims" style="padding:.5rem .75rem;font-size:.8rem;color:var(--ink2);font-family:'JetBrains Mono',monospace"></div>
+        </div>
       </div>
 
       <div class="divider" style="margin-top:1.25rem"></div>
@@ -1002,8 +1009,38 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
         </div>
         <p style="font-size:.72rem;color:var(--ink4);margin-top:.5rem;line-height:1.55">
           Width (X) · Height (Y) · Depth (Z). Leave blank to view at original scale.
-          One value = scale (proportional, no skew). Two or three = resize to exact size (may skew).
+          One value = scale (proportional, no skew). Two or three = resize only those dimensions; others stay at original size.
         </p>
+      </div>
+
+      <div class="divider" style="margin-top:1rem"></div>
+
+      <div style="margin-bottom:.75rem">
+        <div class="card-label" style="margin-bottom:.75rem">
+          <span class="step-num">3</span>
+          Scale by %
+          <span style="font-family:'Instrument Sans',sans-serif;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink4);margin-left:.3rem">(optional)</span>
+        </div>
+        <p style="font-size:.72rem;color:var(--ink4);margin-top:.5rem;line-height:1.55">
+          Scale the model uniformly by a percentage. Increase = enlarge; decrease = shrink.
+        </p>
+        <div class="form-row" style="flex-wrap:wrap;align-items:center;gap:.75rem;justify-content:space-between">
+          <div id="load3dScaleDirectionGroup" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-weight:500">
+              <input type="radio" name="load3dScaleDirection" value="increase" checked/>
+              <span>Increase</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-weight:500">
+              <input type="radio" name="load3dScaleDirection" value="decrease"/>
+              <span>Decrease</span>
+            </label>
+          </div>
+          <div class="fg" style="min-width:90px;max-width:120px;margin-left:auto">
+            <!-- <label>%</label> -->
+            <input id="load3dScalePercent" type="number" min="0" step="any" placeholder="e.g. 10%"/>
+          </div>
+        </div>
+        
       </div>
 
       <button class="btn btn-ink btn-lg" id="btnLoad3d" style="margin-top:1.1rem" disabled>
@@ -1685,41 +1722,70 @@ load3dDrop.addEventListener('drop',e=>{
     updateLoad3dButton();
   }
 });
+let load3dPreviewBlobUrl=null;
 load3dFile.addEventListener('change',function(){ if(this.files[0]) updateLoad3dButton(); });
 
 function getLoad3dDims(){
+  const percentEl=document.getElementById('load3dScalePercent');
+  const percentVal=percentEl?percentEl.value.trim():'';
+  const directionChecked=document.querySelector('input[name="load3dScaleDirection"]:checked');
   return {
     w: document.getElementById('load3dWidth').value.trim(),
     h: document.getElementById('load3dHeight').value.trim(),
     d: document.getElementById('load3dDepth').value.trim(),
     unit: document.getElementById('load3dUnit').value,
+    scaleByPercent: !!percentVal,
+    scaleDirection: directionChecked?directionChecked.value:'increase',
+    scalePercent: percentVal,
   };
 }
 
 function updateLoad3dButton(){
   const file=load3dFile.files&&load3dFile.files[0];
-  const {w,h,d}=getLoad3dDims();
-  const hasDims=!!(w||h||d);
+  const {w,h,d,scaleByPercent,unit}=getLoad3dDims();
+  const hasDims=!!(w||h||d)||scaleByPercent;
   btnLoad3d.disabled=!file;
   const lbl=document.getElementById('load3dBtnLabel');
   if(lbl) lbl.textContent=hasDims?'Scale / Resize':'Load & show';
   const fileLabel=document.getElementById('load3dFileLabel');
-  if(fileLabel){
-    if(file){
-      fileLabel.textContent='✓ Selected: '+file.name;
-      fileLabel.style.display='block';
-      load3dDrop.classList.add('has-file');
-    }else{
-      fileLabel.textContent='';
-      fileLabel.style.display='none';
-      load3dDrop.classList.remove('has-file');
-    }
+  const previewWrap=document.getElementById('load3dSelectedPreview');
+  const previewMV=document.getElementById('load3dPreviewMV');
+  const dimsEl=document.getElementById('load3dSelectedDims');
+  if(file){
+    fileLabel&&(fileLabel.textContent='✓ Selected: '+file.name, fileLabel.style.display='block');
+    load3dDrop.classList.add('has-file');
+    if(load3dPreviewBlobUrl) URL.revokeObjectURL(load3dPreviewBlobUrl);
+    load3dPreviewBlobUrl=URL.createObjectURL(file);
+    if(previewMV) previewMV.setAttribute('src',load3dPreviewBlobUrl);
+    if(previewWrap) previewWrap.style.display='block';
+    if(dimsEl) dimsEl.textContent='Dimensions: …';
+    const fd=new FormData();
+    fd.append('file',file);
+    fd.append('obj_unit',unit||'cm');
+    const base=window.location.origin||'http://127.0.0.1:5000';
+    fetch(base+'/3d-dimensions',{method:'POST',body:fd}).then(r=>r.json()).then(data=>{
+      if(data.w!=null&&data.h!=null&&data.d!=null&&dimsEl)
+        dimsEl.textContent='Dimensions: '+data.w+' × '+data.h+' × '+data.d+' '+(data.unit||'cm')+' (W × H × D)';
+      else if(data.error&&dimsEl) dimsEl.textContent='Dimensions: '+data.error;
+    }).catch(()=>{ if(dimsEl) dimsEl.textContent='Dimensions: unavailable'; });
+  }else{
+    fileLabel&&(fileLabel.textContent='', fileLabel.style.display='none');
+    load3dDrop.classList.remove('has-file');
+    if(load3dPreviewBlobUrl){ URL.revokeObjectURL(load3dPreviewBlobUrl); load3dPreviewBlobUrl=null; }
+    if(previewMV) previewMV.removeAttribute('src');
+    if(previewWrap) previewWrap.style.display='none';
+    if(dimsEl) dimsEl.textContent='';
   }
 }
 
-['load3dWidth','load3dHeight','load3dDepth','load3dUnit'].forEach(id=>{
+['load3dWidth','load3dHeight','load3dDepth','load3dUnit','load3dScalePercent','load3dScaleDirectionGroup'].forEach(id=>{
   const el=document.getElementById(id);
   if(el){ el.addEventListener('input',updateLoad3dButton); el.addEventListener('change',updateLoad3dButton); }
+});
+document.getElementById('load3dScaleDirectionGroup')?.addEventListener('change',function(){
+  const checked=document.querySelector('input[name="load3dScaleDirection"]:checked');
+  const p=document.getElementById('load3dScalePercent');
+  if(p&&checked) p.setAttribute('max',checked.value==='decrease'?'99':'');
 });
 
 let load3dOriginalBlobUrl=null;
@@ -1763,11 +1829,16 @@ btnLoad3d.addEventListener('click',async()=>{
   const cameraHintEl=document.getElementById('load3dCameraHint');
   if(cameraHintEl) cameraHintEl.style.display='none';
   btnLoad3d.disabled=true;
-  const {w,h,d,unit}=getLoad3dDims();
-  const hasDims=!!(w||h||d);
+  const {w,h,d,unit,scaleByPercent,scaleDirection,scalePercent}=getLoad3dDims();
+  const hasDims=!!(w||h||d)||scaleByPercent;
 
   const fd=new FormData();
   fd.append('file',file);
+  if(scaleByPercent&&scalePercent){
+    fd.append('scale_by_percent','1');
+    fd.append('scale_direction',scaleDirection);
+    fd.append('scale_percent',scalePercent);
+  }
   if(w) fd.append('obj_width',w);
   if(h) fd.append('obj_height',h);
   if(d) fd.append('obj_depth',d);
@@ -1801,7 +1872,10 @@ btnLoad3d.addEventListener('click',async()=>{
       const orig=si.original;
       const scl=si.scaled;
       let scaleNote='';
-      if(si.mode==='scale'&&si.scale_factors){
+      if(si.scale_percent!=null){
+        const pct=si.scale_percent; const dir=si.scale_direction==='decrease'?'−':'+';
+        scaleNote=`<br><span style="opacity:.9;font-size:.72rem">Scaled by ${dir}${pct}% (${si.scale_direction==='decrease'?'decrease':'increase'}).</span>`;
+      }else if(si.mode==='scale'&&si.scale_factors){
         const onlyW=!!w&&!h&&!d, onlyH=!w&&!!h&&!d, onlyD=!w&&!h&&!!d;
         const dimName=onlyW?'width':onlyH?'height':'depth';
         const targetVal=onlyW?scl.w:onlyH?scl.h:scl.d;
@@ -1830,10 +1904,6 @@ btnLoad3d.addEventListener('click',async()=>{
         const s=resp.scale_info.scaled;
         load3dResultWrap.dataset.originalDims=`${o.w} × ${o.h} × ${o.d} ${u}`;
         load3dResultWrap.dataset.scaledDims=`${s.w} × ${s.h} × ${s.d} ${u}`;
-        const origBtn=viewSwitchEl&&viewSwitchEl.querySelector('.load3d-view-btn[data-view="original"]');
-        const scaledBtn=viewSwitchEl&&viewSwitchEl.querySelector('.load3d-view-btn[data-view="scaled"]');
-        if(origBtn) origBtn.textContent=`View original (${o.w} × ${o.h} × ${o.d} ${u})`;
-        if(scaledBtn) scaledBtn.textContent=`View scaled (${s.w} × ${s.h} × ${s.d} ${u})`;
       }
       if(viewSwitchEl){ viewSwitchEl.style.display='flex'; viewSwitchEl.querySelectorAll('.load3d-view-btn').forEach(b=>b.classList.remove('active')); viewSwitchEl.querySelector('.load3d-view-btn[data-view="scaled"]').classList.add('active'); }
       const showingLab=document.getElementById('load3dShowingLabel');
