@@ -764,6 +764,10 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
       API Explorer
       <span class="nav-badge">Test</span>
     </button>
+    <button class="nav-item" data-panel="interiorDetection">
+      <span class="nav-icon">🪑</span>
+      Interior Analysis
+    </button>
   </nav>
 
   <div class="sidebar-footer">
@@ -794,6 +798,38 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
       <div class="page-desc">List of all APIs used in this repo. Click <strong>Test</strong> to send a request with your payload and view the response.</div>
     </div>
     <div id="apiBridgeList" class="api-bridge-list"></div>
+  </div>
+
+  <!-- ── PANEL: INTERIOR ANALYSIS ──────────────────────────────────────────────── -->
+  <div class="panel" id="panel-interiorDetection">
+    <div class="page-head">
+      <div class="page-title">Interior Analysis</div>
+      <div class="page-desc">Upload a room or interior image. Click <strong>Analyze</strong> to get scene (style, palette, lighting) and a list of objects with dimensions, materials, colors, fabric, texture, and finish — for interior designers.</div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-label"><span class="step-num">1</span>Select image</div>
+      </div>
+      <div class="drop" id="interiorDropZone">
+        <input type="file" id="interiorFileIn" accept="image/*"/>
+        <span class="drop-icon">🖼</span>
+        <p><strong>Click or drag an image here</strong></p>
+        <span class="hint">PNG · JPG · WebP — max 5 MB</span>
+      </div>
+      <div class="img-prev" id="interiorImgPrev">
+        <img id="interiorPrevImg" alt="preview"/>
+      </div>
+      <button class="btn btn-ink btn-lg" id="btnInteriorAnalyze" style="margin-top:1.1rem" disabled>
+        <span>✦</span> Analyze
+      </button>
+      <div class="status st-idle" id="interiorStatus"></div>
+    </div>
+    <div class="result-wrap card" id="interiorResultWrap" style="display:none">
+      <div class="res-badge"><span class="pulse"></span><span id="interiorResultBadgeText">Analysis result</span></div>
+      <div id="interiorResultContent">
+        <pre id="interiorResultJson" class="api-bridge-result" style="max-height:70vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.8rem;margin-top:.5rem"></pre>
+      </div>
+    </div>
   </div>
 
   <!-- API Explorer Test modal -->
@@ -1337,6 +1373,10 @@ const API_BRIDGE_LIST = [
   { name: "Get profile", method: "GET", path: "/profile/get", description: "Get current design personality profile.", payload: null, useQuery: false, paramsHint: "No parameters required. Leave empty and click Run request." },
   { name: "Analyse boards", method: "POST", path: "/profile/analyse/boards", description: "Analyse selected Pinterest boards for DPP (request body from frontend).", payload: {}, useQuery: false, paramsHint: "JSON body (usually built by the app from selected boards). Can send {} for a minimal request; full payload typically includes board IDs and options." },
   { name: "Build profile from boards", method: "POST", path: "/profile/build/boards", description: "Build DPP from selected boards (request body from frontend).", payload: {}, useQuery: false, paramsHint: "JSON body (built by the app from selected boards and analyses). Can send {} for minimal; full payload includes raw_dpp, params, etc." },
+  { name: "Interior Analysis", method: "POST", path: "/profile/analyse/interior-design", description: "Analyze a room/interior image and return scene (style, palette, lighting) + objects with dimensions, materials, colors, fabric, texture, finish for interior designers.", useQuery: false, multipart: true, paramsHint: "Required: upload one image file. Optional: template_id (ProcessIQ template ID, defaults to 28). Returns JSON with scene and objects array.", multipartFields: [
+    { name: "image", type: "file", required: true, accept: "image/*", label: "Room/interior image (required)" },
+    { name: "template_id", type: "text", label: "Template ID (optional)", placeholder: "28" }
+  ]},
   { name: "Spotify playlists", method: "GET", path: "/profile/spotify/playlists", description: "List user Spotify playlists (requires session).", payload: null, useQuery: false, paramsHint: "No parameters required. You must be logged in via Spotify. Leave empty and click Run request." },
   { name: "Proxy GLB", method: "GET", path: "/proxy-glb", description: "Proxy a GLB from external URL (query: url=...).", payload: null, useQuery: true, queryExample: "url=https://example.com/model.glb", paramsHint: "Required query param: url (full URL to a .glb file). One line: url=https://.... Example is pre-filled." },
   { name: "Generate 3D", method: "POST", path: "/generate-3d", description: "Convert a single image to 3D via Meshy (multipart: image + optional dimensions).", useQuery: false, multipart: true, paramsHint: "Required: choose an image file. Optional: obj_width, obj_height, obj_depth (numbers), obj_unit (cm/mm/m/in/ft).", multipartFields: [
@@ -2222,6 +2262,84 @@ btnConvert.addEventListener('click', async()=>{
   }
   btnConvert.disabled=false;
 });
+
+/* ──────────────────────────────────────────────
+   INTERIOR ANALYSIS
+────────────────────────────────────────────── */
+const interiorDropZone = document.getElementById('interiorDropZone');
+const interiorFileIn = document.getElementById('interiorFileIn');
+const interiorImgPrev = document.getElementById('interiorImgPrev');
+const interiorPrevImg = document.getElementById('interiorPrevImg');
+const btnInteriorAnalyze = document.getElementById('btnInteriorAnalyze');
+const interiorStatus = document.getElementById('interiorStatus');
+const interiorResultWrap = document.getElementById('interiorResultWrap');
+const interiorResultJson = document.getElementById('interiorResultJson');
+
+if (interiorDropZone && interiorFileIn) {
+  ['dragenter','dragover','dragleave','drop'].forEach(ev =>
+    interiorDropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+  ['dragenter','dragover'].forEach(ev =>
+    interiorDropZone.addEventListener(ev, () => interiorDropZone.classList.add('over')));
+  ['dragleave','drop'].forEach(ev =>
+    interiorDropZone.addEventListener(ev, () => interiorDropZone.classList.remove('over')));
+  interiorDropZone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) {
+      interiorFileIn.files = e.dataTransfer.files;
+      showInteriorPreview(f);
+    }
+  });
+}
+if (interiorFileIn) {
+  interiorFileIn.addEventListener('change', function() {
+    if (this.files[0]) showInteriorPreview(this.files[0]);
+  });
+}
+
+function showInteriorPreview(f) {
+  if (!interiorPrevImg || !interiorImgPrev || !btnInteriorAnalyze) return;
+  interiorPrevImg.src = URL.createObjectURL(f);
+  interiorImgPrev.classList.add('on');
+  btnInteriorAnalyze.disabled = false;
+}
+
+if (btnInteriorAnalyze) {
+  btnInteriorAnalyze.addEventListener('click', async () => {
+    const f = interiorFileIn && interiorFileIn.files[0];
+    if (!f) return;
+    interiorResultWrap.style.display = 'none';
+    btnInteriorAnalyze.disabled = true;
+    loading(interiorStatus, 'Analyzing image…');
+    const fd = new FormData();
+    fd.append('image', f);
+    try {
+      const r = await fetch((window.GAAZOO_API || '') + '/profile/analyse/interior-design', {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.success !== false) {
+        ok(interiorStatus, 'Analysis complete');
+        interiorResultJson.textContent = JSON.stringify(
+          { scene: data.scene || {}, objects: data.objects || [] },
+          null,
+          2
+        );
+        interiorResultWrap.style.display = 'block';
+      } else {
+        err(interiorStatus, data.error || data.detail || 'Analysis failed');
+        interiorResultJson.textContent = JSON.stringify(data, null, 2);
+        interiorResultWrap.style.display = 'block';
+      }
+    } catch (e) {
+      err(interiorStatus, e.message || 'Request failed');
+      interiorResultJson.textContent = String(e.message || e);
+      interiorResultWrap.style.display = 'block';
+    }
+    btnInteriorAnalyze.disabled = false;
+  });
+}
 
 /* ──────────────────────────────────────────────
    LOAD 3D MODEL (upload .glb/.obj → scale or resize)

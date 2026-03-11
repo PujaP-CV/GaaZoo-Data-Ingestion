@@ -11,6 +11,7 @@ DPP profile routes:
                                    return per-image analysis + question + options.
                                    No DPP built yet.
   POST /profile/analyse/boards  — same but downloads pin images from selected boards.
+  POST /profile/analyse/interior-design — one image → scene + objects JSON (style, palette, lighting; per-object dimensions, materials, colors, finish). Uses ProcessIQ template (INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID).
 
   ── Build (Step 2 of 2) ─────────────────────────────────────────────────────
   POST /profile/build/images    — accepts analyses + user checkbox answers,
@@ -38,6 +39,7 @@ from fastapi.responses import JSONResponse
 from config import Config
 from modules.dpp_builder import build_dpp_from_images, build_dpp_from_pinterest
 from modules.gemini_ai import (
+    analyse_image_interior_design,
     analyse_single_image_vanilla,
     analyse_single_image_with_questions,
     enrich_dpp_with_ai,
@@ -281,6 +283,52 @@ async def analyse_boards_for_questions(request: Request):
         "analyses":           analyses,
         "template_used":      template_id,
         "slider_predictions": slider_predictions,
+    }
+
+
+# ── POST /profile/analyse/interior-design ─────────────────────────────────────
+
+@router.post("/analyse/interior-design")
+async def analyse_image_interior_design_api(
+    image: UploadFile = File(..., description="Room/interior image to analyze"),
+    template_id: Optional[int] = Form(None, description="ProcessIQ template ID (default: INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID)"),
+):
+    """
+    Analyze one interior/room image and return scene + objects JSON for interior designers.
+    Uses ProcessIQ Vanilla Prompt API with the template configured in Excel (template_id).
+    Returns: scene (style, primary_palette, lighting) and objects (each with dimensions_cm, material, fabric, texture, finish, color, etc.).
+    """
+    if not image or not image.filename:
+        return JSONResponse({"error": "Please upload one image."}, status_code=400)
+    ct = image.content_type or ""
+    if ct not in ALLOWED_TYPES:
+        return JSONResponse(
+            {"error": f"Unsupported file type: {ct}. Use JPEG, PNG, WebP, or GIF."},
+            status_code=400,
+        )
+    content = await image.read()
+    if len(content) > MAX_MB * 1024 * 1024:
+        return JSONResponse({"error": f"Image must be under {MAX_MB} MB."}, status_code=400)
+
+    tid = template_id if template_id is not None else Config.INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID
+    logger.info(f"Interior design analysis: {image.filename} with template_id={tid}")
+    result = analyse_image_interior_design(
+        image.filename,
+        content,
+        ct,
+        template_id=tid,
+    )
+    if result.get("error"):
+        return JSONResponse(
+            {"success": False, "error": result["error"], "scene": result.get("scene", {}), "objects": result.get("objects", [])},
+            status_code=500,
+        )
+    return {
+        "success": True,
+        "filename": result["filename"],
+        "template_used": result["template_used"],
+        "scene": result["scene"],
+        "objects": result["objects"],
     }
 
 

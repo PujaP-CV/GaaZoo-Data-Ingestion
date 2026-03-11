@@ -105,6 +105,10 @@ class Config:
     #   20 = AI picks the most design-defining dimension, writes a focused question
     IMAGE_QUESTION_TEMPLATE_ID = int(os.getenv("IMAGE_QUESTION_TEMPLATE_ID", "19"))
 
+    # Interior design scene + objects analysis (ProcessIQ Excel template):
+    #   Analyse one room image → JSON with scene (style, palette, lighting) and objects (furniture, flooring, decor, etc.) with dimensions, materials, colors, finish.
+    INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID = int(os.getenv("INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID", "28"))
+
 
 # ── Module-level shortcuts (used by pipeline/module files) ─────────────
 cfg = Config()

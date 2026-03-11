@@ -24,6 +24,7 @@ GaaZoo Template IDs in Excel:
   19 — GaaZoo Image Q Multi       → per-image fixed question + 4 AI-generated options
   20 — GaaZoo Image Q Dimension   → per-image AI-picked dimension + focused question
   21 — GaaZoo DNA Predictor       → aggregated signals → 12 material/shape slider scores
+  28 — GaaZoo Interior Design Scene Analysis → image → scene (style, palette, lighting) + objects (dimensions, materials, colors, finish) for interior designers
 """
 
 import base64
@@ -339,6 +340,132 @@ def analyse_single_image_with_questions(
         result.setdefault("options", [])
         result.setdefault("dimension", None)
         return result
+
+
+# ── Template 28: Interior Design Scene + Objects Analysis ──────────────────────
+#
+# ProcessIQ Excel prompt template (Template No = 28, or value of INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID):
+# ---------------------------------------------------------------------------------------------------------
+# You are an expert interior design analyst. Analyze the provided room/interior image in detail.
+#
+# Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
+#
+# {
+#   "scene": {
+#     "style": ["style1", "style2", ...],
+#     "primary_palette": [
+#       {"hex": "#XXXXXX", "name": "color name"},
+#       ...
+#     ],
+#     "lighting": {
+#       "type": "e.g. natural daylight + pendant lamp",
+#       "temperature": "e.g. warm neutral ~3500K"
+#     }
+#   },
+#   "objects": [
+#     {
+#       "object": "identifier e.g. sectional_sofa",
+#       "category": "furniture|flooring|lighting|built_in|decor|textile|plant|architectural_feature",
+#       "dimensions_cm": { "length": N, "width": N, "height": N, ... },
+#       "material": "e.g. solid wood, microcement",
+#       "fabric": "if upholstery e.g. linen blend",
+#       "texture": "e.g. smooth, soft woven, coarse woven",
+#       "finish": "matte|gloss|satin|natural",
+#       "color": { "hex": "#XXXXXX", "name": "color name" },
+#       "placement": "e.g. center of rug",
+#       "style": "optional design style note"
+#     },
+#     ... for floors: material (tiles/wood/microcement), texture, gloss/matt, color; for lighting: bulb type/temperature; for decor: materials, colors array; etc.
+#   ]
+# }
+#
+# For each visible object (furniture, rugs, lights, floor, walls, shelves, plants, decor, textiles):
+# - Estimate real-world dimensions in cm where possible.
+# - Give hex and name for colors.
+# - Include material, fabric (if applicable), texture, finish (matte/gloss).
+# - For flooring: tiles type, gloss/matt, color. For walls: color, finish.
+# Include all details an interior designer would need for specification and sourcing.
+# ---------------------------------------------------------------------------------------------------------
+
+def analyse_image_interior_design(
+    filename: str,
+    img_bytes: bytes,
+    mimetype: str,
+    template_id: int = None,
+) -> dict:
+    """
+    Send one interior/room image to ProcessIQ template (default: INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID).
+    Returns JSON with:
+      - scene: style, primary_palette, lighting
+      - objects: list of objects, each with object, category, dimensions_cm, material, fabric, texture, finish, color(s), placement, etc.
+
+    The prompt in ProcessIQ Excel for this template_id must ask the LLM to analyze the image and return
+    valid JSON in exactly this structure (scene + objects with interior-designer fields).
+    """
+    tid = template_id if template_id is not None else getattr(
+        Config, "INTERIOR_DESIGN_ANALYSIS_TEMPLATE_ID", 28
+    )
+    try:
+        raw = _call_vanilla(
+            template_id=tid,
+            template_name="GaaZoo Interior Design Scene Analysis",
+            parameters={},
+            image_bytes_list=[(filename, img_bytes, mimetype)],
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
+        )
+        data = _parse_json_response(raw)
+
+        # Unwrap list wrapper if API returns [ { response: "..." } ]
+        if isinstance(data, list):
+            first = data[0] if data else {}
+            if isinstance(first, dict):
+                inner = first.get("response") or first.get("result") or first.get("content")
+                if isinstance(inner, str):
+                    try:
+                        data = _parse_json_response(inner)
+                    except Exception:
+                        data = {"scene": {}, "objects": [], "raw_text": inner}
+                else:
+                    data = first
+            else:
+                data = {"scene": {}, "objects": []}
+        if not isinstance(data, dict):
+            data = {"scene": {}, "objects": [], "raw_text": str(data)}
+
+        scene = data.get("scene") or {}
+        objects = data.get("objects")
+        if not isinstance(objects, list):
+            objects = []
+
+        # Normalise scene.primary_palette to list of {hex, name}
+        palette = scene.get("primary_palette") or []
+        if isinstance(palette, list):
+            normalised_palette = []
+            for p in palette:
+                if isinstance(p, dict) and p.get("hex"):
+                    normalised_palette.append({
+                        "hex": p["hex"],
+                        "name": p.get("name") or p.get("label") or "",
+                    })
+                elif isinstance(p, str) and p:
+                    normalised_palette.append({"hex": p, "name": ""})
+            scene = {**scene, "primary_palette": normalised_palette}
+
+        return {
+            "filename": filename,
+            "template_used": tid,
+            "scene": scene,
+            "objects": objects,
+        }
+    except Exception as e:
+        logger.warning(f"Interior design analysis failed [{filename}] (template {tid}): {e}")
+        return {
+            "filename": filename,
+            "template_used": tid,
+            "error": str(e),
+            "scene": {},
+            "objects": [],
+        }
 
 
 # ── Template 21: Material/Shape DNA Predictor ────────────────────────────────
