@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 
 # Always load .env from the repo root regardless of where Python is invoked from
 ROOT     = Path(__file__).resolve().parent.parent   # repo root
-load_dotenv(ROOT / ".env")
+load_dotenv()
 BACKEND  = Path(__file__).resolve().parent          # backend/
-DATA_DIR      = ROOT / "data"
+DATA_DIR      = ROOT / "backend" / "data"
 DIR_2D        = DATA_DIR / "2d"
 DIR_3D        = DATA_DIR / "3d"
 DIR_3D_SCALED = DATA_DIR / "3d" / "scaled"

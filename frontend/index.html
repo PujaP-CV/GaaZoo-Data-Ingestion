@@ -1404,12 +1404,16 @@ function renderGrid(items){
     return;
   }
 
+  // Prefix backend-served file paths with the API base URL
+  function _resolveImgUrl(u){return(u&&u.startsWith('/api/files/'))?API+u:u;}
+
   // Store gallery URLs by asin (Amazon: multiple; SERP: single)
   const galleryMap={};
   filtered.forEach(it=>{
-    galleryMap[it.asin]=Array.isArray(it.image_gallery_urls)&&it.image_gallery_urls.length
+    const raw=Array.isArray(it.image_gallery_urls)&&it.image_gallery_urls.length
       ?it.image_gallery_urls
       :(it.image_url?[it.image_url]:[]);
+    galleryMap[it.asin]=raw.map(_resolveImgUrl);
   });
   window.__catGalleries=galleryMap;
 
