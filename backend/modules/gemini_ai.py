@@ -186,7 +186,7 @@ def analyse_single_image_vanilla(
             template_name="GaaZoo Image Analyser",
             parameters={},
             image_bytes_list=[(filename, img_bytes, mimetype)],
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         logger.debug(f"Vanilla API raw response (truncated): {raw[:200]}")
         data = _parse_json_response(raw)
@@ -281,7 +281,7 @@ def analyse_single_image_with_questions(
             template_name=template_name,
             parameters={},
             image_bytes_list=[(filename, img_bytes, mimetype)],
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
 
@@ -412,7 +412,7 @@ def predict_material_shape_dna(aggregated_signals: dict) -> dict:
             template_id=21,
             template_name="GaaZoo DNA Predictor",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         print("raw dna response.......................\n", data)
@@ -480,7 +480,7 @@ def spotify_mood_vector(
             template_id=24,
             template_name="GaaZoo Spotify → Mood Vector",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -525,7 +525,7 @@ def spotify_mood_to_attributes(mood_vector: dict) -> dict:
             template_id=25,
             template_name="GaaZoo Mood Vector → Interior Attributes",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -594,7 +594,7 @@ def spotify_question_from_signals(styles: list, mood_tags: list, playlist_names:
             template_id=26,
             template_name="GaaZoo Spotify Question from Signals",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         print("Template 26 — raw response:", raw[:300] if isinstance(raw, str) else raw)
         data = _parse_json_response(raw)
@@ -638,7 +638,7 @@ def spotify_design_signals(playlist_names: str, tracks_summary: str) -> dict:
             template_id=22,
             template_name="GaaZoo Spotify Design Signals",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -733,7 +733,7 @@ def predict_material_shape_dna_spotify(aggregated_signals: dict) -> dict:
             template_id=23,
             template_name="GaaZoo Spotify DNA Predictor",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         data = _parse_json_response(raw)
         if isinstance(data, list):
@@ -868,7 +868,7 @@ def enrich_dpp_with_ai(raw_dpp: dict) -> dict:
             template_name="GaaZoo DPP Enrichment",
             parameters=params,
             # image_bytes_list=image_bytes_list if image_bytes_list else None,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
 
         # Log raw return and attempt to extract the actual DPP JSON
@@ -1213,7 +1213,7 @@ def generate_design_suggestions(dpp: dict, room_type: str = "living room") -> di
             template_id=17,
             template_name="GaaZoo Design Suggestions",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
         return {
             "room_type": room_type,
@@ -1267,7 +1267,7 @@ def answer_design_question(dpp: dict, question: str) -> str:
             template_id=18,
             template_name="GaaZoo Design Q&A",
             parameters=params,
-            llm=Config().get("VANILLA_LLM", "openai"),
+            llm=getattr(Config, "VANILLA_LLM", "openai"),
         )
     except Exception as e:
         logger.error(f"Design Q&A failed: {e}")
