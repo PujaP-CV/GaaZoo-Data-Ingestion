@@ -2383,7 +2383,8 @@ btnLoad3d.addEventListener('click',async()=>{
       return;
     }
     const isScaled=!!resp.scaled_model_url&&!(resp.scale_info&&resp.scale_info.error);
-    const viewUrl=isScaled?resp.scaled_model_url:(load3dOriginalBlobUrl||resp.model_url);
+    const scaledAbsUrl=resp.scaled_model_url?(resp.scaled_model_url.startsWith('http')?resp.scaled_model_url:API+resp.scaled_model_url):null;
+    const viewUrl=isScaled?scaledAbsUrl:(load3dOriginalBlobUrl||resp.model_url);
     load3dMV.setAttribute('src',viewUrl);
     load3dResultWrap.classList.add('on');
     document.getElementById('load3dBadgeText').textContent=isScaled?'Model scaled / resized':'Model loaded';
@@ -2419,9 +2420,9 @@ btnLoad3d.addEventListener('click',async()=>{
       badge.style.display='block';
     }
 
-    if(isScaled&&resp.scaled_model_url){
+    if(isScaled&&scaledAbsUrl){
       load3dResultWrap.dataset.originalUrl=load3dOriginalBlobUrl||'';
-      load3dResultWrap.dataset.scaledUrl=resp.scaled_model_url;
+      load3dResultWrap.dataset.scaledUrl=scaledAbsUrl;
       if(resp.scale_info&&resp.scale_info.original&&resp.scale_info.scaled){
         const o=resp.scale_info.original,u=resp.scale_info.unit||unit;
         const s=resp.scale_info.scaled;
@@ -2435,9 +2436,9 @@ btnLoad3d.addEventListener('click',async()=>{
       if(cameraHint) cameraHint.style.display='block';
     }
     const dlRow=document.getElementById('load3dDlRow');
-    if(isScaled&&resp.scaled_model_url){
+    if(isScaled&&scaledAbsUrl){
       const origLink=load3dOriginalBlobUrl?`<a class="dl-btn" style="background:var(--bg);border-color:var(--border);color:var(--ink3)" href="${esc(load3dOriginalBlobUrl)}" download="${esc(file.name)}">↓ Original</a>`:'';
-      dlRow.innerHTML=`<a class="dl-btn" href="${esc(resp.scaled_model_url)}" download>↓ Download scaled GLB</a>${origLink}`;
+      dlRow.innerHTML=`<a class="dl-btn" href="${esc(scaledAbsUrl)}" download>↓ Download scaled GLB</a>${origLink}`;
     }else if(load3dOriginalBlobUrl||resp.model_url){
       dlRow.innerHTML=`<a class="dl-btn" href="${esc(load3dOriginalBlobUrl||resp.model_url)}" download="${esc(file.name||'model.glb')}">↓ Download</a>`;
     }else{
