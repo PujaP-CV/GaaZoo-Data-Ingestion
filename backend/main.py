@@ -32,6 +32,7 @@ from routes.profile_routes import router as profile_router
 from routes.ai_routes      import router as ai_router
 from routes.catalog_routes import router as catalog_router
 from routes.viewer_routes  import router as viewer_router
+from routes.shapely_routes import router as shapely_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -88,7 +89,7 @@ def create_app() -> FastAPI:
     # instead of blocking with a 503.
     _SKIP_DB = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known",
                 "/generate-3d", "/proxy-glb", "/scale-3d", "/3d-dimensions", "/dpp", "/docs", "/redoc",
-                "/openapi.json", "/api/files")
+                "/openapi.json", "/api/files", "/shapely")
 
     @app.middleware("http")
     async def ensure_db(request: Request, call_next):
@@ -108,6 +109,7 @@ def create_app() -> FastAPI:
     app.include_router(ai_router,      prefix="/ai",      tags=["AI"])
     app.include_router(catalog_router,                    tags=["Catalog"])
     app.include_router(viewer_router,                     tags=["Viewer"])
+    app.include_router(shapely_router,                    tags=["Shapely Demo"])
 
     # ── Health check ────────────────────────────────────────────────────
     @app.get("/health", tags=["Health"])

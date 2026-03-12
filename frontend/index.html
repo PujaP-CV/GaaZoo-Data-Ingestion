@@ -55,6 +55,10 @@ html{scroll-behavior:smooth;font-size:15px}
   --dpp:       #b56b4a;
   --dpp-light: #fdf3ee;
   --dpp-border:#e8c4b0;
+
+  --shapely:     #0d7c6b;
+  --shapely-light:#e8f5f2;
+  --shapely-border:#7dd4c4;
 }
 
 body{
@@ -139,6 +143,8 @@ body{
 .nav-item.active.neo{border-left-color:var(--neo);color:var(--neo)}
 .nav-item.active.dpp{border-left-color:var(--dpp);color:var(--dpp)}
 .nav-item.active.dpp .nav-icon{background:var(--dpp-light)}
+.nav-item.active.shapely{border-left-color:var(--shapely);color:var(--shapely)}
+.nav-item.active.shapely .nav-icon{background:var(--shapely-light)}
 .nav-icon{
   width:30px;height:30px;border-radius:8px;
   display:flex;align-items:center;justify-content:center;
@@ -705,9 +711,32 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
   .nav-item.active.amz{border-bottom-color:var(--amz-mid)}
   .nav-item.active.serp{border-bottom-color:var(--serp-mid)}
   .nav-item.active.neo{border-bottom-color:var(--neo)}
+  .nav-item.active.shapely{border-bottom-color:var(--shapely)}
   .nav-section{display:none}
   .sidebar-footer{display:none}
   .main{padding:1.5rem 1.1rem 3rem}
+}
+
+/* ── Shapely demo ───────────────────────────────── */
+.shapely-explanations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.shapely-explanations-list li {
+  padding: .6rem .85rem;
+  margin-bottom: .4rem;
+  background: var(--red-light);
+  border: 1px solid var(--red-border);
+  border-radius: var(--r);
+  font-size: .9rem;
+  color: var(--ink2);
+}
+.shapely-explanations-list li:empty { display: none; }
+.shapely-explanations-list .shapely-ok {
+  background: var(--neo-light);
+  border-color: var(--neo-border);
+  color: var(--ink2);
 }
 </style>
 </head>
@@ -767,6 +796,11 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
     <button class="nav-item" data-panel="interiorDetection">
       <span class="nav-icon">🪑</span>
       Interior Analysis
+    </button>
+    <div class="nav-section" style="margin-top:.5rem">Shapely demo</div>
+    <button class="nav-item shapely" data-panel="shapely">
+      <span class="nav-icon">📐</span>
+      Shapely demo
     </button>
   </nav>
 
@@ -828,6 +862,75 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
       <div class="res-badge"><span class="pulse"></span><span id="interiorResultBadgeText">Analysis result</span></div>
       <div id="interiorResultContent">
         <pre id="interiorResultJson" class="api-bridge-result" style="max-height:70vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.8rem;margin-top:.5rem"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL: SHAPELY LAYOUT VALIDATION ───────────────────────────────────── -->
+  <div class="panel" id="panel-shapely">
+    <div class="page-head">
+      <div class="page-title">Shapely Layout Validation</div>
+      <div class="page-desc">Upload a JSON file from OpenCV object detection (room boundary + objects like sofa, chair, coffee_table with coordinates). The backend uses Shapely to validate the layout against interior design rules (min clearance, no overlap, coffee table–sofa distance) and returns human-readable explanations plus raw violations.</div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-label"><span class="step-num">1</span> Upload layout JSON</div>
+      </div>
+      <div class="drop" id="shapelyDropZone">
+        <input type="file" id="shapelyFileIn" accept=".json,application/json"/>
+        <span class="drop-icon">📄</span>
+        <p><strong>Click or drag a JSON file here</strong></p>
+        <span class="hint">OpenCV-style layout: room + objects with coords (e.g. sofa, chair, coffee_table)</span>
+      </div>
+      <p id="shapelyFileName" class="shapely-file-name" style="display:none;margin-top:.5rem;font-size:.875rem;color:var(--ink2)"></p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;align-items:center">
+        <button class="btn btn-ink btn-lg" id="btnShapelyValidate" disabled>
+          <span>✓</span> Validate layout
+        </button>
+        <button class="btn btn-outline btn-lg" id="btnShapelyBlueprint" disabled title="View room and objects from uploaded JSON">
+          <span>📐</span> View Blueprint
+        </button>
+      </div>
+      <div class="status st-idle" id="shapelyStatus"></div>
+    </div>
+    <div class="result-wrap card" id="shapelyResultWrap" style="display:none">
+      <div class="res-badge"><span class="pulse"></span><span id="shapelyResultBadgeText">Validation result</span></div>
+      <p id="shapelySummary" class="shapely-summary" style="margin:.75rem 0 1rem;font-size:.9rem;color:var(--ink2);line-height:1.4"></p>
+      <div id="shapelyExplanationsWrap" style="margin-bottom:1.25rem">
+        <div class="card-label" style="margin-bottom:.5rem"><b>Human-readable results</b></div>
+        <ul id="shapelyExplanationsList" class="shapely-explanations-list"></ul>
+      </div>
+      <div id="shapelyNudgeWrap" style="margin-bottom:1.25rem;display:none">
+        <div class="card-label" style="margin-bottom:.5rem"><b>Nudge (overlap resolution)</b></div>
+        <ul id="shapelyNudgeList" class="shapely-explanations-list"></ul>
+      </div>
+      <div id="shapelySpaceWrap" style="margin-bottom:1.25rem;display:none">
+        <div class="card-label" style="margin-bottom:.5rem"><b>Space evaluation (how much can objects move?)</b></div>
+        <ul id="shapelySpaceList" class="shapely-explanations-list"></ul>
+      </div>
+      <div id="shapelyUpdatedBlueprintWrap" style="margin-bottom:1.25rem;display:none">
+        <button type="button" class="btn btn-outline" id="btnShapelyBlueprintAfterNudge" title="View blueprint with positions after overlap resolution (nudge)">
+          <span>📐</span> View updated blueprint (after analyze)
+        </button>
+      </div>
+      <div>
+        <div class="card-label" style="margin-bottom:.5rem"><b>Raw JSON response</b></div>
+        <pre id="shapelyRawJson" class="api-bridge-result" style="max-height:50vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.8rem"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blueprint modal (Shapely layout diagram) -->
+  <div id="shapelyBlueprintModal" class="api-bridge-modal" aria-hidden="true">
+    <div class="api-bridge-modal-backdrop" id="shapelyBlueprintModalBackdrop"></div>
+    <div class="api-bridge-modal-box" style="max-width:980px">
+      <div class="api-bridge-modal-head">
+        <h3 id="shapelyBlueprintModalTitle" class="api-bridge-modal-title">Blueprint — Room &amp; objects (dimensions in mm)</h3>
+        <button type="button" class="api-bridge-modal-close" id="shapelyBlueprintModalClose" aria-label="Close">×</button>
+      </div>
+      <div class="api-bridge-modal-body" style="text-align:center;padding:1rem;min-height:120px">
+        <div id="shapelyBlueprintStatus" class="status st-idle" style="margin-bottom:.5rem"></div>
+        <img id="shapelyBlueprintImg" alt="Layout blueprint" style="max-width:100%;height:auto;border:1px solid var(--border);border-radius:6px;display:block;margin:0 auto" />
       </div>
     </div>
   </div>
@@ -2340,6 +2443,249 @@ if (btnInteriorAnalyze) {
     btnInteriorAnalyze.disabled = false;
   });
 }
+
+/* ──────────────────────────────────────────────
+   SHAPELY LAYOUT VALIDATION
+────────────────────────────────────────────── */
+const shapelyDropZone = document.getElementById('shapelyDropZone');
+const shapelyFileIn = document.getElementById('shapelyFileIn');
+const shapelyFileName = document.getElementById('shapelyFileName');
+const btnShapelyValidate = document.getElementById('btnShapelyValidate');
+const btnShapelyBlueprint = document.getElementById('btnShapelyBlueprint');
+const shapelyStatus = document.getElementById('shapelyStatus');
+const shapelyResultWrap = document.getElementById('shapelyResultWrap');
+const shapelyExplanationsList = document.getElementById('shapelyExplanationsList');
+const shapelyRawJson = document.getElementById('shapelyRawJson');
+const shapelyResultBadgeText = document.getElementById('shapelyResultBadgeText');
+let lastShapelyLayoutAfterNudge = null;
+
+if (shapelyDropZone && shapelyFileIn) {
+  ['dragenter','dragover','dragleave','drop'].forEach(ev =>
+    shapelyDropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+  ['dragenter','dragover'].forEach(ev =>
+    shapelyDropZone.addEventListener(ev, () => shapelyDropZone.classList.add('over')));
+  ['dragleave','drop'].forEach(ev =>
+    shapelyDropZone.addEventListener(ev, () => shapelyDropZone.classList.remove('over')));
+  shapelyDropZone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f && (f.name.toLowerCase().endsWith('.json') || f.type === 'application/json')) {
+      shapelyFileIn.files = e.dataTransfer.files;
+      if (btnShapelyValidate) btnShapelyValidate.disabled = false;
+      if (btnShapelyBlueprint) btnShapelyBlueprint.disabled = false;
+      if (shapelyFileName) { shapelyFileName.textContent = 'Uploaded: ' + f.name; shapelyFileName.style.display = 'block'; }
+    }
+  });
+}
+function updateShapelyFileName() {
+  const f = shapelyFileIn && shapelyFileIn.files && shapelyFileIn.files[0];
+  if (shapelyFileName) {
+    if (f) { shapelyFileName.textContent = 'Uploaded: ' + f.name; shapelyFileName.style.display = 'block'; }
+    else { shapelyFileName.textContent = ''; shapelyFileName.style.display = 'none'; }
+  }
+}
+if (shapelyFileIn) {
+  shapelyFileIn.addEventListener('change', function() {
+    const hasFile = this.files && this.files[0];
+    if (btnShapelyValidate) btnShapelyValidate.disabled = !hasFile;
+    if (btnShapelyBlueprint) btnShapelyBlueprint.disabled = !hasFile;
+    updateShapelyFileName();
+  });
+}
+
+if (btnShapelyValidate) {
+  btnShapelyValidate.addEventListener('click', async () => {
+    const f = shapelyFileIn && shapelyFileIn.files[0];
+    if (!f) return;
+    shapelyResultWrap.style.display = 'none';
+    btnShapelyValidate.disabled = true;
+    loading(shapelyStatus, 'Validating layout…');
+    const fd = new FormData();
+    fd.append('file', f);
+    try {
+      const r = await fetch((window.GAAZOO_API || '') + '/shapely/validate-layout', {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) {
+        ok(shapelyStatus, data.valid ? 'Layout is valid' : 'Validation complete');
+        if (shapelyResultBadgeText) shapelyResultBadgeText.textContent = data.valid ? 'Layout valid' : 'Violations found';
+        const shapelySummary = document.getElementById('shapelySummary');
+        if (shapelySummary) shapelySummary.textContent = data.summary || '';
+        if (shapelyExplanationsList) {
+          shapelyExplanationsList.innerHTML = '';
+          if (data.explanations && data.explanations.length) {
+            data.explanations.forEach(t => {
+              const li = document.createElement('li');
+              li.textContent = t;
+              shapelyExplanationsList.appendChild(li);
+            });
+          } else {
+            const li = document.createElement('li');
+            li.className = 'shapely-ok';
+            li.textContent = 'No violations. Layout meets all interior design rules.';
+            shapelyExplanationsList.appendChild(li);
+          }
+        }
+        const nudgeWrap = document.getElementById('shapelyNudgeWrap');
+        const nudgeList = document.getElementById('shapelyNudgeList');
+        if (nudgeWrap && nudgeList) {
+          const nudgeLines = (data.nudge_explanations || []).concat(data.nudge_error_explanations || []);
+          if (nudgeLines.length) {
+            nudgeWrap.style.display = 'block';
+            nudgeList.innerHTML = '';
+            nudgeLines.forEach(t => {
+              const li = document.createElement('li');
+              li.textContent = t;
+              nudgeList.appendChild(li);
+            });
+          } else {
+            nudgeWrap.style.display = 'none';
+          }
+        }
+        const spaceWrap = document.getElementById('shapelySpaceWrap');
+        const spaceList = document.getElementById('shapelySpaceList');
+        if (spaceWrap && spaceList && data.space_evaluation && data.space_evaluation.length) {
+          spaceWrap.style.display = 'block';
+          spaceList.innerHTML = '';
+          data.space_evaluation.forEach(se => {
+            const li = document.createElement('li');
+            const obj = se.object_moved || (se.objects && se.objects[0]);
+            const away = se.move_away_mm != null ? se.move_away_mm + ' mm' : 'N/A';
+            const blocked = se.blocked_by || 'none';
+            li.textContent = (obj ? obj + ': can move away ' + away + (blocked !== 'none' ? ' (blocked by ' + blocked + ')' : '') : JSON.stringify(se));
+            spaceList.appendChild(li);
+          });
+        } else if (spaceWrap) spaceWrap.style.display = 'none';
+        if (shapelyRawJson) shapelyRawJson.textContent = JSON.stringify(data, null, 2);
+        lastShapelyLayoutAfterNudge = data.layout_after_nudge || null;
+        const updatedBpWrap = document.getElementById('shapelyUpdatedBlueprintWrap');
+        if (updatedBpWrap) updatedBpWrap.style.display = lastShapelyLayoutAfterNudge ? 'block' : 'none';
+      } else {
+        err(shapelyStatus, data.detail || data.message || 'Validation failed');
+        if (shapelyRawJson) shapelyRawJson.textContent = JSON.stringify(data, null, 2);
+        if (shapelyExplanationsList) {
+          shapelyExplanationsList.innerHTML = '';
+          const li = document.createElement('li');
+          li.textContent = typeof data.detail === 'string' ? data.detail : (data.detail && data.detail[0] && data.detail[0].msg) ? data.detail[0].msg : 'Request failed. See raw response.';
+          shapelyExplanationsList.appendChild(li);
+        }
+        lastShapelyLayoutAfterNudge = null;
+        const updatedBpWrapErr = document.getElementById('shapelyUpdatedBlueprintWrap');
+        if (updatedBpWrapErr) updatedBpWrapErr.style.display = 'none';
+      }
+      shapelyResultWrap.style.display = 'block';
+    } catch (e) {
+      err(shapelyStatus, e.message || 'Request failed');
+      if (shapelyRawJson) shapelyRawJson.textContent = String(e.message || e);
+      if (shapelyExplanationsList) {
+        shapelyExplanationsList.innerHTML = '';
+        const li = document.createElement('li');
+        li.textContent = e.message || 'Request failed';
+        shapelyExplanationsList.appendChild(li);
+      }
+      lastShapelyLayoutAfterNudge = null;
+      const updatedBpWrapCatch = document.getElementById('shapelyUpdatedBlueprintWrap');
+      if (updatedBpWrapCatch) updatedBpWrapCatch.style.display = 'none';
+      shapelyResultWrap.style.display = 'block';
+    }
+    btnShapelyValidate.disabled = false;
+  });
+}
+
+// View Blueprint: send uploaded JSON to /shapely/blueprint, show PNG in modal
+const shapelyBlueprintModal = document.getElementById('shapelyBlueprintModal');
+const shapelyBlueprintImg = document.getElementById('shapelyBlueprintImg');
+const shapelyBlueprintStatus = document.getElementById('shapelyBlueprintStatus');
+const shapelyBlueprintModalClose = document.getElementById('shapelyBlueprintModalClose');
+const shapelyBlueprintModalBackdrop = document.getElementById('shapelyBlueprintModalBackdrop');
+const shapelyBlueprintModalTitle = document.getElementById('shapelyBlueprintModalTitle');
+
+const SHAPELY_BLUEPRINT_TITLE_DEFAULT = 'Blueprint — Room & objects (dimensions in mm)';
+const SHAPELY_BLUEPRINT_TITLE_AFTER_NUDGE = 'Blueprint (after analyze) — Room & objects (dimensions in mm)';
+
+function openShapelyBlueprintModal(title) {
+  if (shapelyBlueprintModalTitle) shapelyBlueprintModalTitle.textContent = title || SHAPELY_BLUEPRINT_TITLE_DEFAULT;
+  if (shapelyBlueprintModal) shapelyBlueprintModal.setAttribute('aria-hidden', 'false');
+}
+let shapelyBlueprintObjectUrl = null;
+function closeShapelyBlueprintModal() {
+  if (shapelyBlueprintModal) shapelyBlueprintModal.setAttribute('aria-hidden', 'true');
+  if (shapelyBlueprintImg) shapelyBlueprintImg.src = '';
+  if (shapelyBlueprintObjectUrl) { URL.revokeObjectURL(shapelyBlueprintObjectUrl); shapelyBlueprintObjectUrl = null; }
+}
+
+if (btnShapelyBlueprint) {
+  btnShapelyBlueprint.addEventListener('click', async () => {
+    const f = shapelyFileIn && shapelyFileIn.files && shapelyFileIn.files[0];
+    if (!f) return;
+    if (shapelyBlueprintStatus) { shapelyBlueprintStatus.textContent = 'Generating blueprint…'; shapelyBlueprintStatus.className = 'status st-loading'; }
+    if (shapelyBlueprintImg) shapelyBlueprintImg.src = '';
+    try {
+      const jsonText = await f.text();
+      const layout = JSON.parse(jsonText);
+      const r = await fetch((window.GAAZOO_API || '') + '/shapely/blueprint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonText,
+        credentials: 'include',
+      });
+      if (!r.ok) {
+        const errData = await r.json().catch(() => ({}));
+        throw new Error(errData.detail || r.statusText || 'Blueprint failed');
+      }
+      const blob = await r.blob();
+      if (shapelyBlueprintObjectUrl) URL.revokeObjectURL(shapelyBlueprintObjectUrl);
+      shapelyBlueprintObjectUrl = URL.createObjectURL(blob);
+      if (shapelyBlueprintImg) shapelyBlueprintImg.src = shapelyBlueprintObjectUrl;
+      if (shapelyBlueprintStatus) { shapelyBlueprintStatus.textContent = ''; shapelyBlueprintStatus.className = 'status st-idle'; }
+      openShapelyBlueprintModal(SHAPELY_BLUEPRINT_TITLE_DEFAULT);
+    } catch (e) {
+      if (shapelyBlueprintStatus) { shapelyBlueprintStatus.textContent = e.message || 'Failed to load blueprint'; shapelyBlueprintStatus.className = 'status st-err'; }
+      openShapelyBlueprintModal(SHAPELY_BLUEPRINT_TITLE_DEFAULT);
+    }
+  });
+}
+
+// View updated blueprint (layout after nudge) — from validation result
+const btnShapelyBlueprintAfterNudge = document.getElementById('btnShapelyBlueprintAfterNudge');
+if (btnShapelyBlueprintAfterNudge) {
+  btnShapelyBlueprintAfterNudge.addEventListener('click', async () => {
+    if (!lastShapelyLayoutAfterNudge) return;
+    if (shapelyBlueprintImg) shapelyBlueprintImg.src = '';
+    if (shapelyBlueprintStatus) { shapelyBlueprintStatus.textContent = 'Generating blueprint…'; shapelyBlueprintStatus.className = 'status st-loading'; shapelyBlueprintStatus.style.display = 'block'; }
+    openShapelyBlueprintModal(SHAPELY_BLUEPRINT_TITLE_AFTER_NUDGE);
+    try {
+      const r = await fetch((window.GAAZOO_API || '') + '/shapely/blueprint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastShapelyLayoutAfterNudge),
+        credentials: 'include',
+      });
+      let errMsg = '';
+      if (!r.ok) {
+        try {
+          const errData = await r.json();
+          errMsg = typeof errData.detail === 'string' ? errData.detail : (Array.isArray(errData.detail) ? (errData.detail[0]?.msg || JSON.stringify(errData.detail)) : (errData.detail || r.statusText));
+        } catch (_) {
+          errMsg = r.statusText || 'Blueprint request failed';
+        }
+        throw new Error(errMsg);
+      }
+      const blob = await r.blob();
+      if (shapelyBlueprintObjectUrl) URL.revokeObjectURL(shapelyBlueprintObjectUrl);
+      shapelyBlueprintObjectUrl = URL.createObjectURL(blob);
+      if (shapelyBlueprintImg) shapelyBlueprintImg.src = shapelyBlueprintObjectUrl;
+      if (shapelyBlueprintStatus) { shapelyBlueprintStatus.textContent = ''; shapelyBlueprintStatus.className = 'status st-idle'; shapelyBlueprintStatus.style.display = ''; }
+    } catch (e) {
+      if (shapelyBlueprintStatus) { shapelyBlueprintStatus.textContent = e.message || 'Failed to load blueprint'; shapelyBlueprintStatus.className = 'status st-err'; shapelyBlueprintStatus.style.display = 'block'; }
+    }
+  });
+}
+
+if (shapelyBlueprintModalClose) shapelyBlueprintModalClose.addEventListener('click', closeShapelyBlueprintModal);
+if (shapelyBlueprintModalBackdrop) shapelyBlueprintModalBackdrop.addEventListener('click', closeShapelyBlueprintModal);
 
 /* ──────────────────────────────────────────────
    LOAD 3D MODEL (upload .glb/.obj → scale or resize)
