@@ -1307,9 +1307,11 @@ function switchPanel(name, iframeQuery){
   if(name==='dpp'){
     const frame=document.getElementById('dppFrame');
     if(frame){
-      // On S3: dpp.html  |  When Flask serves both: /dpp
-      // config.js defines window.GAAZOO_API; if it's set, we're on S3
-      const dppBase = window.GAAZOO_API ? 'dpp.html' : '/dpp';
+      // When backend serves frontend (same origin, e.g. ngrok or localhost:8000): use /dpp
+      // When frontend is on another host (e.g. S3): use dpp.html
+      const apiOrigin = (window.GAAZOO_API || '').replace(/\/$/, '');
+      const sameOrigin = apiOrigin && (new URL(apiOrigin, window.location.origin).origin === window.location.origin);
+      const dppBase = sameOrigin ? '/dpp' : 'dpp.html';
       const dppUrl  = dppBase + (iframeQuery||'');
       if(!frame.dataset.loaded||iframeQuery){
         frame.src=dppUrl;

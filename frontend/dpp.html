@@ -2301,13 +2301,10 @@
         <script src="config.js" onerror="window.GAAZOO_API=window.GAAZOO_API||''"></script>
         <script>
           // ── Config ───────────────────────────────────────────────────────
-          // Session cookies are hostname-bound (localhost ≠ 127.0.0.1).
-          // Derive the API host from the current page hostname so the same
-          // cookie sent during OAuth login is included in every API call:
-          //   page at localhost:3000   → API = http://localhost:8000   (Pinterest)
-          //   page at 127.0.0.1:3000  → API = http://127.0.0.1:8000   (Spotify)
-          //   page on S3 / EC2        → API = window.GAAZOO_API as-is
+          // config.js sets GAAZOO_API to same origin when on ngrok (one tunnel).
+          // For localhost/127.0.0.1, derive API from page hostname so session cookies match.
           (function(){
+            if (window.location.hostname.includes('ngrok')) return; // config.js already set same origin
             const raw = window.GAAZOO_API || window.parent?.GAAZOO_API || '';
             if (raw && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
               try {
@@ -2339,10 +2336,11 @@
             }
             if (params.get('error')) {
               const err = params.get('error');
+              const onNgrok = window.location.hostname.includes('ngrok');
               const msg = err === 'spotify_state_mismatch'
-                ? 'Spotify: open the app at http://127.0.0.1:3000 and ensure the Spotify dashboard redirect URI is http://127.0.0.1:8000/auth/spotify/callback.'
+                ? (onNgrok ? 'Spotify: set SPOTIFY_REDIRECT_URI in .env to your backend ngrok URL (e.g. https://your-backend.ngrok-free.dev/auth/spotify/callback) and add it in the Spotify dashboard. Set HTTPS=True.' : 'Spotify: open the app at http://127.0.0.1:3000 and ensure the Spotify dashboard redirect URI is http://127.0.0.1:8000/auth/spotify/callback.')
                 : err === 'pinterest_state_mismatch'
-                ? 'Pinterest: open the app at http://localhost:3000 and ensure the Pinterest dashboard redirect URI is http://localhost:8000/auth/pinterest/callback.'
+                ? (onNgrok ? 'Pinterest: set PINTEREST_REDIRECT_URI in .env to your backend ngrok URL (e.g. https://your-backend.ngrok-free.dev/auth/pinterest/callback) and add it in the Pinterest dashboard. Set HTTPS=True.' : 'Pinterest: open the app at http://localhost:3000 and ensure the Pinterest dashboard redirect URI is http://localhost:8000/auth/pinterest/callback.')
                 : 'Connection failed: ' + err;
               showToast(msg, true);
               window.history.replaceState({}, '', window.location.pathname);
