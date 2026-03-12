@@ -108,6 +108,45 @@ def _distance_mm(poly_a: Polygon, poly_b: Polygon) -> float:
     return float(poly_a.distance(poly_b))
 
 
+def get_shapely_geometry_output(geometries: dict[str, Polygon]) -> dict[str, Any]:
+    """
+    Return raw Shapely outputs only (no rule logic): distances and intersects/within_room.
+    Used to show on UI what the Shapely package returns before rules are applied.
+    """
+    room = geometries.get(ROOM_KEY)
+    furniture = {k: v for k, v in geometries.items() if k != ROOM_KEY}
+    names = list(furniture.keys())
+
+    object_pairs: list[dict[str, Any]] = []
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            a, b = names[i], names[j]
+            poly_a, poly_b = furniture[a], furniture[b]
+            d = _distance_mm(poly_a, poly_b)
+            object_pairs.append({
+                "a": a,
+                "b": b,
+                "distance_mm": round(d, 2),
+                "intersects": bool(poly_a.intersects(poly_b)),
+            })
+
+    object_to_room: list[dict[str, Any]] = []
+    if room:
+        for n in names:
+            poly = furniture[n]
+            d = _distance_mm(poly, room.boundary) if hasattr(room, "boundary") else _distance_mm(poly, room)
+            object_to_room.append({
+                "object": n,
+                "distance_to_boundary_mm": round(d, 2),
+                "within_room": bool(poly.within(room) or room.contains(poly)),
+            })
+
+    return {
+        "object_pairs": object_pairs,
+        "object_to_room": object_to_room,
+    }
+
+
 def evaluate_rules(geometries: dict[str, Polygon], rules: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     """
     Evaluate rules from SHAPELY_LAYOUT_RULES.md against the given geometries.

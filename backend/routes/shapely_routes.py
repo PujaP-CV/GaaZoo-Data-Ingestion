@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse, Response
 
 from modules.shapely_blueprint import layout_to_blueprint_png
 from modules.shapely_nudge import nudge_overlaps, space_evaluation
-from modules.shapely_rule_engine import evaluate_rules, geometries_to_layout, layout_json_to_geometries
+from modules.shapely_rule_engine import evaluate_rules, geometries_to_layout, get_shapely_geometry_output, layout_json_to_geometries
 from modules.shapely_response_formatter import RESPONSE_GUIDE, format_response, _build_summary
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,7 @@ async def validate_layout(file: UploadFile = File(..., description="JSON file wi
     result["space_evaluation"] = space_results
 
     result["objects_found"] = list(geometries_nudged.keys())
+    result["shapely_geometry"] = get_shapely_geometry_output(geometries_nudged)
     nudge_applied = len([r for r in nudge_reports if r.get("success")])
     nudge_failed = len(nudge_errors)
     result["nudge_applied"] = nudge_applied

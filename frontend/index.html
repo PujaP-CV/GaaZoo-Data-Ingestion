@@ -896,8 +896,13 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
     <div class="result-wrap card" id="shapelyResultWrap" style="display:none">
       <div class="res-badge"><span class="pulse"></span><span id="shapelyResultBadgeText">Validation result</span></div>
       <p id="shapelySummary" class="shapely-summary" style="margin:.75rem 0 1rem;font-size:.9rem;color:var(--ink2);line-height:1.4"></p>
+      <div id="shapelyGeometryWrap" style="margin-bottom:1.25rem;display:none">
+        <!-- <div class="card-label" style="margin-bottom:.5rem"><b>What Shapely returned (geometry only, no rules)</b></div> -->
+        <p class="hint" style="margin-bottom:.5rem;font-size:.8rem;color:var(--ink3)">Raw outputs from the Shapely package: distances and intersects/within_room. Rule checking uses these values.</p>
+        <pre id="shapelyGeometryJson" class="api-bridge-result" style="max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.8rem;margin:0"></pre>
+      </div>
       <div id="shapelyExplanationsWrap" style="margin-bottom:1.25rem">
-        <div class="card-label" style="margin-bottom:.5rem"><b>Human-readable results</b></div>
+        <div class="card-label" style="margin-bottom:.5rem"><b>Human-readable results (rule violations)</b></div>
         <ul id="shapelyExplanationsList" class="shapely-explanations-list"></ul>
       </div>
       <div id="shapelyNudgeWrap" style="margin-bottom:1.25rem;display:none">
@@ -2513,6 +2518,12 @@ if (btnShapelyValidate) {
         if (shapelyResultBadgeText) shapelyResultBadgeText.textContent = data.valid ? 'Layout valid' : 'Violations found';
         const shapelySummary = document.getElementById('shapelySummary');
         if (shapelySummary) shapelySummary.textContent = data.summary || '';
+        const shapelyGeometryWrap = document.getElementById('shapelyGeometryWrap');
+        const shapelyGeometryJson = document.getElementById('shapelyGeometryJson');
+        if (shapelyGeometryWrap && shapelyGeometryJson && data.shapely_geometry) {
+          shapelyGeometryWrap.style.display = 'block';
+          shapelyGeometryJson.textContent = JSON.stringify(data.shapely_geometry, null, 2);
+        } else if (shapelyGeometryWrap) shapelyGeometryWrap.style.display = 'none';
         if (shapelyExplanationsList) {
           shapelyExplanationsList.innerHTML = '';
           if (data.explanations && data.explanations.length) {
@@ -2574,6 +2585,8 @@ if (btnShapelyValidate) {
         lastShapelyLayoutAfterNudge = null;
         const updatedBpWrapErr = document.getElementById('shapelyUpdatedBlueprintWrap');
         if (updatedBpWrapErr) updatedBpWrapErr.style.display = 'none';
+        const geomWrapErr = document.getElementById('shapelyGeometryWrap');
+        if (geomWrapErr) geomWrapErr.style.display = 'none';
       }
       shapelyResultWrap.style.display = 'block';
     } catch (e) {
@@ -2588,6 +2601,8 @@ if (btnShapelyValidate) {
       lastShapelyLayoutAfterNudge = null;
       const updatedBpWrapCatch = document.getElementById('shapelyUpdatedBlueprintWrap');
       if (updatedBpWrapCatch) updatedBpWrapCatch.style.display = 'none';
+      const geomWrapCatch = document.getElementById('shapelyGeometryWrap');
+      if (geomWrapCatch) geomWrapCatch.style.display = 'none';
       shapelyResultWrap.style.display = 'block';
     }
     btnShapelyValidate.disabled = false;

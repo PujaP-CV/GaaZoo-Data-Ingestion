@@ -128,6 +128,7 @@ RESPONSE_GUIDE = {
     "nudge_error_explanations": "Human-readable lines for each failed nudge (why it could not be fixed).",
     "space_evaluation": "For each violation: how far the object can be moved to fix it before hitting wall or another object.",
     "objects_found": "List of object names detected in the layout (including 'room' for the boundary).",
+    "shapely_geometry": "Raw outputs from the Shapely package only (no rules): object_pairs (distance_mm, intersects) and object_to_room (distance_to_boundary_mm, within_room). Rule checking uses these values.",
     "layout_after_nudge": "Updated room and object coordinates after any nudging (use this as the corrected layout).",
     "response_guide": "This object: explains what each key in the response means.",
 }
