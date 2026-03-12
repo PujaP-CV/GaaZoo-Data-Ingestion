@@ -67,7 +67,7 @@ async def validate_layout(file: UploadFile = File(..., description="JSON file wi
     result["space_evaluation"] = space_results
 
     result["objects_found"] = list(geometries_nudged.keys())
-    result["shapely_geometry"] = get_shapely_geometry_output(geometries_nudged)
+    result["shapely_geometry"] = get_shapely_geometry_output(geometries)
     nudge_applied = len([r for r in nudge_reports if r.get("success")])
     nudge_failed = len(nudge_errors)
     result["nudge_applied"] = nudge_applied
