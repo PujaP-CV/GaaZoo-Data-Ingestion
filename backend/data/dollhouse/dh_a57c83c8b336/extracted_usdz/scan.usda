@@ -1,0 +1,125 @@
+#usda 1.0
+(
+    defaultPrim = "scan"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "scan" (
+    kind = "assembly"
+)
+{
+    def Xform "Section_grp" (
+        kind = "group"
+    )
+    {
+    }
+
+    def Xform "Mesh_grp" (
+        kind = "group"
+    )
+    {
+        def Xform "Arch_grp" (
+            kind = "group"
+        )
+        {
+            def Xform "Wall_0_grp" (
+                kind = "group"
+                prepend references = [
+                    @./assets/Mesh/Walls/Wall0/Wall0.usda@,
+                    @./assets/Mesh/Walls/Wall0/Door1.usda@
+                ]
+            )
+            {
+            }
+
+            def Xform "Wall_1_grp" (
+                kind = "group"
+                prepend references = @./assets/Mesh/Walls/Wall1/Wall1.usda@
+            )
+            {
+            }
+
+            def Xform "Wall_2_grp" (
+                kind = "group"
+                prepend references = [
+                    @./assets/Mesh/Walls/Wall2/Wall2.usda@,
+                    @./assets/Mesh/Walls/Wall2/Window1.usda@
+                ]
+            )
+            {
+            }
+
+            def Xform "Wall_3_grp" (
+                kind = "group"
+                prepend references = [
+                    @./assets/Mesh/Walls/Wall3/Wall3.usda@,
+                    @./assets/Mesh/Walls/Wall3/Door0.usda@
+                ]
+            )
+            {
+            }
+
+            def Xform "Wall_4_grp" (
+                kind = "group"
+                prepend references = @./assets/Mesh/Walls/Wall4/Wall4.usda@
+            )
+            {
+            }
+
+            def Xform "Wall_5_grp" (
+                kind = "group"
+                prepend references = [
+                    @./assets/Mesh/Walls/Wall5/Wall5.usda@,
+                    @./assets/Mesh/Walls/Wall5/Window0.usda@
+                ]
+            )
+            {
+            }
+        }
+
+        def Xform "Floor_grp" (
+            kind = "group"
+            prepend references = @./assets/Mesh/Floors/Floor0.usda@
+        )
+        {
+        }
+
+        def Xform "Object_grp" (
+            kind = "group"
+        )
+        {
+            def Xform "Table_grp" (
+                kind = "group"
+                prepend references = [
+                    @./assets/Mesh/Table/Table0.usda@,
+                    @./assets/Mesh/Table/Table1.usda@
+                ]
+            )
+            {
+            }
+
+            def Xform "Chair_grp" (
+                kind = "group"
+                prepend references = [
+                    @./assets/Mesh/Chair/Chair0.usda@,
+                    @./assets/Mesh/Chair/Chair1.usda@,
+                    @./assets/Mesh/Chair/Chair2.usda@,
+                    @./assets/Mesh/Chair/Chair3.usda@,
+                    @./assets/Mesh/Chair/Chair4.usda@,
+                    @./assets/Mesh/Chair/Chair5.usda@
+                ]
+            )
+            {
+            }
+
+            def Xform "Television_grp" (
+                kind = "group"
+                prepend references = @./assets/Mesh/Television/Television0.usda@
+            )
+            {
+            }
+        }
+    }
+}
+

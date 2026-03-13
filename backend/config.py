@@ -18,12 +18,14 @@ DIR_2D        = DATA_DIR / "2d"
 DIR_3D        = DATA_DIR / "3d"
 DIR_3D_SCALED = DATA_DIR / "3d" / "scaled"
 DIR_TEMP      = DATA_DIR / "temp"
+DIR_DOLLHOUSE = DATA_DIR / "dollhouse"
 
 DATA_DIR.mkdir(exist_ok=True)
 DIR_2D.mkdir(exist_ok=True)
 DIR_3D.mkdir(exist_ok=True)
 DIR_3D_SCALED.mkdir(parents=True, exist_ok=True)
 DIR_TEMP.mkdir(parents=True, exist_ok=True)
+DIR_DOLLHOUSE.mkdir(parents=True, exist_ok=True)
 
 
 # ── App config ─────────────────────────────────────────────────────────

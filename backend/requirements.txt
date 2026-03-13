@@ -17,6 +17,9 @@ Pillow>=9.0
 beautifulsoup4>=4.11
 trimesh>=3.23
 numpy>=1.24
+usd-core>=24.0
+# Optional: for full-scene USDZ→GLB (preserves layout). Without it, preview uses pxr+trimesh (can look like a single plank).
+aspose-3d>=26.0
 
 # ── DPP (Design Personality Profile) ──────────────────────────────────
 google-generativeai>=0.8

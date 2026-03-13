@@ -5,15 +5,21 @@ Handles: catalog CRUD, image fetching (Amazon / Google), local vendor upload,
 """
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+logger = logging.getLogger(__name__)
 
-from config import DATA_DIR, DIR_2D, DIR_3D
-from modules.catalog_db import init_db, list_items, get_item_by_asin, upsert_item
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, Response
+
+from config import DATA_DIR, DIR_2D, DIR_3D, DIR_DOLLHOUSE
+from modules.catalog_db import (
+    init_db, list_items, get_item_by_asin, upsert_item,
+    upsert_dollhouse, list_dollhouses, get_dollhouse,
+)
 
 router = APIRouter()
 
@@ -316,4 +322,231 @@ def api_files(subpath: str):
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Not found")
     mimetype = "model/gltf-binary" if path.suffix.lower() == ".glb" else None
+    if path.suffix.lower() == ".usdz":
+        mimetype = "model/vnd.usdz+zip"
     return FileResponse(str(path), media_type=mimetype)
+
+
+# ── Dollhouse (Unity scan: name, scan_json, usdz) ───────────────────────
+
+def _enrich_dollhouse(d: dict) -> dict:
+    """Add usdz_url for frontend."""
+    if d is None:
+        return d
+    d = dict(d)
+    d["usdz_url"] = _path_to_file_url(d.get("usdz_path"))
+    return d
+
+
+@router.post("/api/dollhouse")
+async def api_dollhouse_create(
+    name:      str = Form(...),
+    scan_json: str = Form(...),
+    usdz_file: UploadFile = File(...),
+):
+    """Create a dollhouse node: name, scan_json string, and uploaded usdz file. Stores file under data/dollhouse/{id}/."""
+    if not name or not name.strip():
+        return JSONResponse({"error": "Missing 'name'"}, status_code=400)
+    name = name.strip()
+    if not usdz_file.filename or not usdz_file.filename.lower().endswith(".usdz"):
+        return JSONResponse({"error": "Upload a .usdz file"}, status_code=400)
+
+    dollhouse_id = "dh_" + uuid.uuid4().hex[:12]
+    out_dir = Path(DIR_DOLLHOUSE) / dollhouse_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    usdz_path = out_dir / "model.usdz"
+
+    content = await usdz_file.read()
+    try:
+        usdz_path.write_bytes(content)
+    except Exception as e:
+        return JSONResponse({"error": f"Failed to save usdz file: {e}"}, status_code=500)
+
+    try:
+        upsert_dollhouse(
+            name=name,
+            scan_json=scan_json,
+            usdz_path=str(usdz_path),
+            dollhouse_id=dollhouse_id,
+        )
+    except Exception as e:
+        return JSONResponse({"error": f"Database error: {e}"}, status_code=500)
+
+    item = get_dollhouse(dollhouse_id)
+    return {"ok": True, "dollhouse_id": dollhouse_id, "item": _enrich_dollhouse(item)}
+
+
+@router.get("/api/dollhouse")
+def api_dollhouse_list(limit: int = 100, offset: int = 0):
+    """List all dollhouse nodes."""
+    try:
+        items = list_dollhouses(limit=min(limit, 200), offset=offset)
+        return {"items": [_enrich_dollhouse(d) for d in items]}
+    except Exception as e:
+        return JSONResponse({
+            "items": [],
+            "warning": "Catalog database unavailable.",
+            "detail": str(e),
+        }, status_code=200)
+
+
+@router.get("/api/dollhouse/{dollhouse_id}")
+def api_dollhouse_get(dollhouse_id: str):
+    """Get a single dollhouse by id."""
+    item = get_dollhouse(dollhouse_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Dollhouse not found")
+    return _enrich_dollhouse(item)
+
+
+def _usdz_to_glb_bytes_aspose(usdz_path: Path) -> bytes:
+    """Full-scene USDZ→GLB via Aspose.3D (preserves hierarchy, transforms, materials)."""
+    import io
+    import aspose.threed as a3d
+    scene = a3d.Scene.from_file(str(usdz_path))
+    buf = io.BytesIO()
+    scene.save(buf, a3d.FileFormat.GLB_BINARY)
+    return buf.getvalue()
+
+
+def _usdz_to_glb_bytes_pxr(usdz_path: Path) -> bytes:
+    """
+    Fallback: extract meshes from USD via pxr + trimesh. Does NOT apply transforms,
+    so complex scenes can appear as a single flattened mesh ("plank").
+    """
+    import tempfile
+    import zipfile
+
+    import numpy as np
+    import trimesh
+    from pxr import Usd, UsdGeom
+
+    usdz_path = Path(usdz_path).resolve()
+    if not usdz_path.is_file():
+        raise FileNotFoundError(f"USDZ file not found: {usdz_path}")
+    if not zipfile.is_zipfile(usdz_path):
+        raise ValueError("USDZ is not a zip file")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        with zipfile.ZipFile(usdz_path, "r") as z:
+            z.extractall(tmp)
+        tmp_path = Path(tmp)
+        usd_file = None
+        for f in tmp_path.rglob("*"):
+            if f.suffix.lower() in (".usdc", ".usda", ".usd"):
+                usd_file = f
+                break
+        if usd_file is None:
+            raise ValueError("No .usdc/.usda/.usd file found inside USDZ")
+
+        stage = Usd.Stage.Open(str(usd_file))
+        if stage is None:
+            raise ValueError("Usd.Stage.Open failed")
+
+        meshes = []
+        for prim in stage.Traverse():
+            if not prim.IsA(UsdGeom.Mesh):
+                continue
+            mesh = UsdGeom.Mesh(prim)
+            points_attr = mesh.GetPointsAttr()
+            face_indices_attr = mesh.GetFaceVertexIndicesAttr()
+            face_counts_attr = mesh.GetFaceVertexCountsAttr()
+            if not points_attr or not face_indices_attr or not face_counts_attr:
+                continue
+            points = np.array(points_attr.Get(), dtype=np.float64)
+            face_indices = np.array(face_indices_attr.Get(), dtype=np.int32)
+            face_counts = np.array(face_counts_attr.Get(), dtype=np.int32)
+            if len(points) == 0 or len(face_indices) == 0:
+                continue
+
+            triangles = []
+            offset = 0
+            for count in face_counts:
+                if count < 3:
+                    offset += count
+                    continue
+                idx = face_indices[offset : offset + count]
+                offset += count
+                if count == 3:
+                    triangles.append(idx)
+                else:
+                    for i in range(1, count - 1):
+                        triangles.append([idx[0], idx[i], idx[i + 1]])
+            if not triangles:
+                continue
+            faces = np.array(triangles, dtype=np.int32)
+            tri_mesh = trimesh.Trimesh(vertices=points, faces=faces)
+            meshes.append(tri_mesh)
+
+        if not meshes:
+            raise ValueError("No UsdGeom.Mesh prims found in USD stage")
+
+        if len(meshes) == 1:
+            scene = meshes[0]
+        else:
+            scene = trimesh.Scene()
+            for m in meshes:
+                scene.add_geometry(m)
+        try:
+            glb_bytes = trimesh.exchange.gltf.export_glb(scene)
+        except Exception as e:
+            logger.info("export_glb failed, using export: %s", e)
+            glb_bytes = scene.export(file_type="glb")
+        if isinstance(glb_bytes, str):
+            glb_bytes = glb_bytes.encode("utf-8")
+        return glb_bytes
+
+
+def _usdz_to_glb_bytes(usdz_path: Path) -> bytes:
+    """
+    Convert USDZ to GLB for browser preview.
+    Prefer Aspose.3D (full-scene, correct layout). Fallback: pxr+trimesh (may look like a single plank).
+    Public API alternative: Sirv (https://api.sirv.com/v2/files/3d/model2GLB) – upload file to Sirv, then POST to convert.
+    """
+    usdz_path = Path(usdz_path).resolve()
+    if not usdz_path.is_file():
+        raise FileNotFoundError(f"USDZ file not found: {usdz_path}")
+
+    try:
+        return _usdz_to_glb_bytes_aspose(usdz_path)
+    except ImportError:
+        logger.info("aspose.threed not installed; use pxr+trimesh fallback (install aspose-3d for full-scene preview)")
+    except Exception as e:
+        logger.warning("Aspose.3D conversion failed: %s; falling back to pxr+trimesh", e)
+
+    return _usdz_to_glb_bytes_pxr(usdz_path)
+
+
+@router.get("/api/dollhouse/{dollhouse_id}/preview")
+def api_dollhouse_preview(dollhouse_id: str):
+    """
+    Load the dollhouse USDZ with trimesh, export to GLB, and return for browser preview.
+    model-viewer supports GLB but not USDZ in most browsers, so we convert server-side.
+    """
+    item = get_dollhouse(dollhouse_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Dollhouse not found")
+    usdz_path = item.get("usdz_path")
+    if not usdz_path:
+        raise HTTPException(status_code=404, detail="USDZ file path not set")
+    path = Path(usdz_path).resolve()
+    if not path.is_file():
+        # Fallback: canonical location under data/dollhouse/{id}/model.usdz
+        alt = Path(DIR_DOLLHOUSE) / dollhouse_id / "model.usdz"
+        if alt.is_file():
+            path = alt.resolve()
+        else:
+            raise HTTPException(status_code=404, detail=f"USDZ file not found: {path}")
+    try:
+        glb_bytes = _usdz_to_glb_bytes(path)
+        return Response(
+            content=glb_bytes,
+            media_type="model/gltf-binary",
+            headers={"Content-Disposition": "inline; filename=preview.glb"},
+        )
+    except Exception as e:
+        logger.exception("USDZ preview failed for %s: %s", dollhouse_id, e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to convert USDZ to GLB for preview: {e}",
+        )

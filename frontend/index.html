@@ -359,6 +359,8 @@ body::before{
 }
 .result-row:hover{background:rgba(0,0,0,.02)}
 .result-row:last-child{border-bottom:none}
+.dollhouse-row{cursor:pointer}
+.dollhouse-row:hover{background:var(--bg2)}
 .rnum{
   font-family:'JetBrains Mono',monospace;
   font-size:.65rem;color:var(--ink4);
@@ -824,6 +826,12 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
       <span class="nav-icon">📐</span>
       Resize and Scale 3D model
     </button>
+
+    <div class="nav-section" style="margin-top:.5rem">Tools</div>
+    <button class="nav-item" data-panel="dollhouse">
+      <span class="nav-icon">🏠</span>
+      Fetch dollhouse
+    </button>
     <button class="nav-item" data-panel="apibridge">
       <span class="nav-icon">🔌</span>
       API Explorer
@@ -862,6 +870,48 @@ model-viewer{width:100%;height:340px;--poster-color:transparent}
   </div>
 
   <!-- ── PANEL: API EXPLORER ──────────────────────────────────────────────── -->
+  <!-- ── PANEL: FETCH DOLLHOUSE ───────────────────────────────────────── -->
+  <div class="panel" id="panel-dollhouse">
+    <div class="page-head">
+      <div class="page-title">Fetch dollhouse</div>
+      <div class="page-desc">View all dollhouse nodes from Neo4j (Unity scan: name, scan_json, usdz). Click one to see JSON and render USDZ preview.</div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-label">Dollhouse list</div>
+        <button class="btn btn-outline" id="btnDollhouseRefresh" style="font-size:.78rem;padding:.4rem .9rem">↻ Refresh</button>
+      </div>
+      <div class="status st-idle" id="dollhouseStatus" style="margin-bottom:.5rem"></div>
+      <div id="dollhouseList" class="result-list">
+        <div class="cat-empty"><span class="em-icon">🏠</span><p>No dollhouses yet</p><small>Add via API Explorer → Add dollhouse, or POST /api/dollhouse</small></div>
+      </div>
+    </div>
+    <div class="card" id="dollhouseDetailCard" style="display:none">
+      <div class="card-head">
+        <div class="card-label" id="dollhouseDetailTitle">Dollhouse detail</div>
+        <button class="btn btn-outline" id="btnDollhouseDetailClose" style="font-size:.75rem;padding:.35rem .85rem">✕ Close</button>
+      </div>
+      <div class="form-row" style="margin-bottom:.75rem">
+        <div class="fg" style="flex:1"><label>Name</label><div id="dollhouseDetailName" class="api-bridge-result" style="padding:.5rem;background:var(--bg2);border-radius:var(--r)"></div></div>
+      </div>
+      <div class="fg" style="margin-bottom:.75rem">
+        <label>Scan JSON</label>
+        <pre id="dollhouseDetailJson" class="api-bridge-result" style="max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all"></pre>
+      </div>
+      <div style="margin-bottom:.75rem">
+        <button class="btn btn-ink" id="btnDollhouseRenderUsdz">Render USDZ preview</button>
+        <a id="dollhouseUsdzLink" href="#" target="_blank" rel="noopener" class="btn btn-outline" style="margin-left:.5rem;font-size:.85rem;display:none">Open USDZ in new tab</a>
+      </div>
+      <div id="dollhousePreviewWrap" style="display:none;margin-top:1rem">
+        <label class="api-bridge-label">USDZ Preview</label>
+        <div class="model-wrap" style="min-height:280px;background:var(--bg2);border-radius:var(--r)">
+          <model-viewer id="dollhouseMV" camera-controls shadow-intensity="0.5" exposure="1" style="width:100%;height:320px" alt="USDZ dollhouse"></model-viewer>
+        </div>
+        <p class="hint" style="margin-top:.5rem;font-size:.8rem">Preview is converted from USDZ to GLB server-side (trimesh) so it works in all browsers.</p>
+      </div>
+    </div>
+  </div>
+
   <div class="panel" id="panel-apibridge">
     <div class="page-head">
       <div class="page-title">API Explorer</div>
@@ -1447,6 +1497,7 @@ function switchPanel(name, iframeQuery){
   const panel=document.getElementById('panel-'+name);
   if(panel)panel.classList.add('active');
   if(name==='catalog')loadCatalog();
+  if(name==='dollhouse')loadDollhouseList();
   if(name==='apibridge')renderApiBridgeList();
   if(name==='dpp'){
     const frame=document.getElementById('dppFrame');
@@ -1500,6 +1551,13 @@ const API_BRIDGE_LIST = [
   { name: "Get catalog item", method: "GET", path: "/api/catalog/{asin}", description: "Get a single catalog item by ASIN. Replace {asin} in path with actual ASIN.", payload: null, useQuery: false, pathParam: "asin", paramsHint: "When you click Run request you will be prompted to enter the ASIN (e.g. B08N5WRWNW). No query params needed." },
   { name: "Delete catalog item", method: "DELETE", path: "/api/catalog/{asin}", description: "Delete item by ASIN. Query: files=1 to delete files.", payload: null, useQuery: true, queryExample: "files=1", pathParam: "asin", paramsHint: "You will be prompted for ASIN. Optional query: files=1 (default) to delete files, files=0 to keep files." },
   { name: "Fetch images", method: "POST", path: "/api/fetch-images", description: "Fetch product images from Amazon or Google SERP and save to Neo4j.", payload: { source: "amazon", query: "office chair", country: "IN", max_amazon: 5, num_serp: 10 }, useQuery: false, paramsHint: "JSON body. Required: query (string). Optional: source (amazon | google), country, max_amazon, num_serp, max_images_per_product. Example is pre-filled." },
+  { name: "Add dollhouse", method: "POST", path: "/api/dollhouse", description: "Create a dollhouse node (Unity scan): name, scan_json, and .usdz file. Stored in Neo4j.", useQuery: false, multipart: true, paramsHint: "Required: name, scan_json (JSON string), and a .usdz file. File is stored under data/dollhouse/{id}/.", multipartFields: [
+    { name: "name", type: "text", required: true, label: "Name (required)", placeholder: "Dollhouse name" },
+    { name: "scan_json", type: "text", required: true, label: "Scan JSON (required)", placeholder: "{}" },
+    { name: "usdz_file", type: "file", required: true, accept: ".usdz", label: "USDZ file (required)" }
+  ]},
+  { name: "List dollhouses", method: "GET", path: "/api/dollhouse", description: "List all dollhouse nodes from Neo4j.", payload: null, useQuery: true, queryExample: "limit=100\noffset=0", paramsHint: "Optional query params: limit, offset (one per line)." },
+  { name: "Get dollhouse", method: "GET", path: "/api/dollhouse/{dollhouse_id}", description: "Get a single dollhouse by id (name, scan_json, usdz_url).", payload: null, useQuery: false, pathParam: "dollhouse_id", paramsHint: "You will be prompted for dollhouse_id when you click Run request." },
   { name: "Add local vendor", method: "POST", path: "/api/add-local-vendor", description: "Add a product from local vendor (multipart: image file + title and optional metadata). Same as the Add to catalog form.", useQuery: false, multipart: true, paramsHint: "Required: title and an image file. Optional: vendor name, category, subcategory, color, style, material, width, height, source URL, product dimensions. All fields match the Add to catalog form.", multipartFields: [
     { name: "image", type: "file", required: true, accept: "image/*", label: "Product image (required)" },
     { name: "title", type: "text", required: true, label: "Product title (required)", placeholder: "Product title" },
@@ -1990,6 +2048,89 @@ function renderFetchResults(items){
     </div>`;
   }).join('');
 }
+
+/* ──────────────────────────────────────────────
+   FETCH DOLLHOUSE
+────────────────────────────────────────────── */
+let dollhouseListData = [];
+function loadDollhouseList(){
+  const statusEl = document.getElementById('dollhouseStatus');
+  const listEl = document.getElementById('dollhouseList');
+  if(!listEl) return;
+  loading('dollhouseStatus', 'Loading dollhouses…');
+  fetch(`${API}/api/dollhouse?limit=100`).then(r=>r.json()).then(d=>{
+    dollhouseListData = d.items || [];
+    if(dollhouseListData.length === 0){
+      listEl.innerHTML = '<div class="cat-empty"><span class="em-icon">🏠</span><p>No dollhouses yet</p><small>Add via API Explorer → Add dollhouse, or POST /api/dollhouse</small></div>';
+      ss('dollhouseStatus', 'No dollhouses', 'st-idle');
+      return;
+    }
+    listEl.innerHTML = dollhouseListData.map((it, i)=>`
+      <div class="result-row dollhouse-row" data-dollhouse-id="${esc(it.dollhouse_id||'')}" data-index="${i}">
+        <div class="rnum">${i+1}</div>
+        <div class="rinfo">
+          <div class="rtitle">${esc(it.name||it.dollhouse_id||'—')}</div>
+          <div class="rsub">${esc(it.dollhouse_id||'')}</div>
+        </div>
+      </div>`).join('');
+    listEl.querySelectorAll('.dollhouse-row').forEach(row=>{
+      row.addEventListener('click', ()=>{
+        const id = row.dataset.dollhouseId;
+        const idx = parseInt(row.dataset.index, 10);
+        const item = dollhouseListData[idx];
+        if(item) showDollhouseDetail(item);
+      });
+    });
+    ss('dollhouseStatus', `${dollhouseListData.length} dollhouse(s)`, 'st-idle');
+  }).catch(e=>{
+    err('dollhouseStatus', e.message || 'Load failed');
+    listEl.innerHTML = '<div class="cat-empty"><span class="em-icon">⚠</span><p>Failed to load</p><small>'+esc(String(e.message))+'</small></div>';
+  });
+}
+function showDollhouseDetail(item){
+  const card = document.getElementById('dollhouseDetailCard');
+  const titleEl = document.getElementById('dollhouseDetailTitle');
+  const nameEl = document.getElementById('dollhouseDetailName');
+  const jsonEl = document.getElementById('dollhouseDetailJson');
+  const previewWrap = document.getElementById('dollhousePreviewWrap');
+  const usdzLink = document.getElementById('dollhouseUsdzLink');
+  if(!card) return;
+  card.style.display = 'block';
+  if(titleEl) titleEl.textContent = 'Dollhouse: ' + (item.name || item.dollhouse_id);
+  if(nameEl) nameEl.textContent = item.name || '—';
+  let jsonStr = item.scan_json || '{}';
+  try { jsonStr = typeof jsonStr === 'string' ? JSON.stringify(JSON.parse(jsonStr), null, 2) : JSON.stringify(jsonStr, null, 2); } catch(_) {}
+  if(jsonEl) jsonEl.textContent = jsonStr;
+  const usdzUrl = item.usdz_url ? (API.replace(/\/$/, '') + item.usdz_url) : null;
+  const previewUrl = item.dollhouse_id ? (API.replace(/\/$/, '') + '/api/dollhouse/' + encodeURIComponent(item.dollhouse_id) + '/preview') : null;
+  window._currentDollhouseUsdzUrl = usdzUrl;
+  window._currentDollhousePreviewUrl = previewUrl;
+  window._currentDollhouseId = item.dollhouse_id;
+  if(usdzLink){
+    if(usdzUrl){ usdzLink.href = usdzUrl; usdzLink.style.display = 'inline-block'; }
+    else usdzLink.style.display = 'none';
+  }
+  if(previewWrap) previewWrap.style.display = 'none';
+}
+document.getElementById('btnDollhouseRefresh')?.addEventListener('click', ()=>{ loadDollhouseList(); });
+document.getElementById('btnDollhouseDetailClose')?.addEventListener('click', ()=>{
+  document.getElementById('dollhouseDetailCard').style.display = 'none';
+});
+document.getElementById('btnDollhouseRenderUsdz')?.addEventListener('click', ()=>{
+  const previewUrl = window._currentDollhousePreviewUrl;
+  const wrap = document.getElementById('dollhousePreviewWrap');
+  const mv = document.getElementById('dollhouseMV');
+  if(!previewUrl){ err('dollhouseStatus', 'No dollhouse selected or preview not available'); return; }
+  if(wrap) wrap.style.display = 'block';
+  if(mv){
+    mv.setAttribute('src', previewUrl);
+    mv.setAttribute('ios-src', previewUrl);
+  }
+});
+document.addEventListener('panel-visible', function(e){
+  if(e.detail && e.detail.panel === 'dollhouse') loadDollhouseList();
+});
+if(document.getElementById('panel-dollhouse')?.classList.contains('active')) loadDollhouseList();
 
 /* ──────────────────────────────────────────────
    CATALOG

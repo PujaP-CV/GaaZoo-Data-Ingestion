@@ -1,0 +1,48 @@
+#usda 1.0
+(
+    defaultPrim = "Wall1"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Wall1" (
+    assetInfo = {
+        asset identifier = @./Wall1.usda@
+        string name = "Wall1"
+    }
+    customData = {
+        string Category = "Wall"
+        string UUID = "EEAF1BA8-AD49-431C-8939-7FF29B3FBBBC"
+    }
+    kind = "component"
+)
+{
+    def Mesh "Wall1"
+    {
+        int[] faceVertexCounts = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+        int[] faceVertexIndices = [0, 1, 2, 0, 2, 3, 7, 6, 4, 6, 5, 4, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]
+        rel material:binding = </Wall1/Wall1_color>
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)]
+        point3f[] points = [(-0.36753967, -1.2072841, 0), (0.36753967, -1.2072841, 0), (0.36753967, 1.2072841, 0), (-0.36753967, 1.2072841, 0), (-0.36753967, -1.2072841, -0.16), (0.36753967, -1.2072841, -0.16), (0.36753967, 1.2072841, -0.16), (-0.36753967, 1.2072841, -0.16), (-0.36753967, 1.2072841, 0), (0.36753967, 1.2072841, 0), (0.36753967, 1.2072841, -0.16), (-0.36753967, 1.2072841, -0.16), (0.36753967, -1.2072841, 0), (-0.36753967, -1.2072841, 0), (-0.36753967, -1.2072841, -0.16), (0.36753967, -1.2072841, -0.16), (0.36753967, 1.2072841, 0), (0.36753967, -1.2072841, 0), (0.36753967, -1.2072841, -0.16), (0.36753967, 1.2072841, -0.16), (-0.36753967, -1.2072841, 0), (-0.36753967, 1.2072841, 0), (-0.36753967, 1.2072841, -0.16), (-0.36753967, -1.2072841, -0.16)]
+        uniform token subdivisionScheme = "none"
+        matrix4d xformOp:transform = ( (0.9663497805595398, 0, -0.2572322189807892, 0), (0, 1, 0, 0), (0.2572321891784668, 0, 0.9663496017456055, 0), (-1.5614643096923828, -0.2816367447376251, -0.5587278604507446, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+
+    def Material "Wall1_color"
+    {
+        token outputs:surface.connect = </Wall1/Wall1_color/surfaceShader.outputs:surface>
+
+        def Shader "surfaceShader"
+        {
+            uniform token info:id = "UsdPreviewSurface"
+            color3f inputs:diffuseColor = (1, 1, 1)
+            color3f inputs:emissiveColor = (0, 0, 0)
+            normal3f inputs:normal = (1, 1, 1)
+            float inputs:occlusion = 1
+            float inputs:opacity = 1
+            token outputs:surface
+        }
+    }
+}
+

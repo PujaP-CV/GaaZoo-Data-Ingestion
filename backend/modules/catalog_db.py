@@ -28,7 +28,7 @@ from neo4j import GraphDatabase
 from config import (
     NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD,
     DEFAULT_CATALOG_NAME, DEFAULT_VENDOR_NAME, DEFAULT_VENDOR_DOMAIN,
-    DIR_2D, DIR_3D,
+    DIR_2D, DIR_3D, DIR_DOLLHOUSE,
 )
 
 # ── Driver singleton ──────────────────────────────────────────────────
@@ -59,7 +59,7 @@ def _to_str(val) -> Optional[str]:
 # ── Bootstrap: constraints ────────────────────────────────────────────
 
 def init_db():
-    """Create uniqueness constraints for all 5 node labels."""
+    """Create uniqueness constraints for all node labels (Catalog, Vendor, ProductType, ProductSubType, Image, Dollhouse)."""
     with _session() as s:
         constraints = [
             "CREATE CONSTRAINT catalog_id_unique   IF NOT EXISTS FOR (n:Catalog)        REQUIRE n.catalog_id  IS UNIQUE",
@@ -67,6 +67,7 @@ def init_db():
             "CREATE CONSTRAINT type_id_unique       IF NOT EXISTS FOR (n:ProductType)    REQUIRE n.type_id     IS UNIQUE",
             "CREATE CONSTRAINT subtype_id_unique    IF NOT EXISTS FOR (n:ProductSubType) REQUIRE n.subtype_id  IS UNIQUE",
             "CREATE CONSTRAINT image_id_unique      IF NOT EXISTS FOR (n:Image)          REQUIRE n.image_id    IS UNIQUE",
+            "CREATE CONSTRAINT dollhouse_id_unique  IF NOT EXISTS FOR (n:Dollhouse)      REQUIRE n.dollhouse_id IS UNIQUE",
         ]
         for c in constraints:
             s.run(c)
@@ -471,6 +472,75 @@ def delete_item(asin: str, delete_files: bool = True) -> bool:
             try: glb.unlink()
             except OSError: pass
     return True
+
+
+# ── Dollhouse node (Unity scan: name, scan_json, usdz file path) ───────
+
+def upsert_dollhouse(
+    name:       str,
+    scan_json:  str,
+    usdz_path:  str,
+    dollhouse_id: Optional[str] = None,
+) -> str:
+    """
+    Create or update a Dollhouse node with name, scan_json (string), and usdz_path.
+    Returns dollhouse_id (generated uuid if not provided).
+    """
+    import uuid
+    now = _now()
+    did = dollhouse_id or ("dh_" + uuid.uuid4().hex[:12])
+    with _session() as s:
+        s.run(
+            """
+            MERGE (d:Dollhouse {dollhouse_id: $dollhouse_id})
+            ON CREATE SET d.name = $name, d.scan_json = $scan_json, d.usdz_path = $usdz_path,
+                          d.created_at = $now, d.updated_at = $now
+            ON MATCH SET  d.name = $name, d.scan_json = $scan_json, d.usdz_path = $usdz_path,
+                          d.updated_at = $now
+            """,
+            dollhouse_id=did,
+            name=name,
+            scan_json=scan_json,
+            usdz_path=usdz_path,
+            now=now,
+        )
+    return did
+
+
+def _dollhouse_node_to_item(record) -> Optional[dict]:
+    if record is None:
+        return None
+    node = record.get("d") or record.get("i")
+    if node is None:
+        return None
+    d = dict(node)
+    return d
+
+
+def get_dollhouse(dollhouse_id: str) -> Optional[dict]:
+    """Get a single Dollhouse node by dollhouse_id."""
+    with _session() as s:
+        r = s.run(
+            "MATCH (d:Dollhouse {dollhouse_id: $id}) RETURN d",
+            id=dollhouse_id,
+        ).single()
+        return _dollhouse_node_to_item({"d": r["d"]}) if r and r.get("d") else None
+
+
+def list_dollhouses(limit: int = 100, offset: int = 0) -> list:
+    """List all Dollhouse nodes, ordered by created_at desc."""
+    with _session() as s:
+        rows = s.run(
+            """
+            MATCH (d:Dollhouse)
+            RETURN d
+            ORDER BY d.created_at DESC
+            SKIP $skip LIMIT $limit
+            """,
+            skip=offset,
+            limit=limit,
+        )
+        return [_dollhouse_node_to_item({"d": r["d"]}) for r in rows if r.get("d")]
 
 
 # ── Backward-compat alias ─────────────────────────────────────────────
