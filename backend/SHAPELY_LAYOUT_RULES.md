@@ -1,0 +1,667 @@
+# Interior Design Spatial Ontology & Rule System
+
+Derived from professional interior design spatial standards.
+
+Total Rules: 620
+
+------------------------------------------------------------------------
+
+# Baseline Rules
+
+-   R0 Baseline: furniture must not overlap
+-   R00 Baseline: all objects inside room boundary
+
+------------------------------------------------------------------------
+
+# Circulation Rules (R1--R120)
+
+-   R1 Circulation: minimum walkway width ≥ 750 mm
+-   R2 Circulation: preferred walkway width ≥ 900 mm
+-   R3 Circulation: major circulation path ≥ 1050 mm
+-   R4 Circulation: clearance around furniture ≥ 600 mm
+-   R5 Circulation: clearance behind seating ≥ 750 mm
+-   R6 Circulation: door swing clearance ≥ 750 mm
+-   R7 Circulation: entry zone clearance ≥ 1200 mm
+-   R8 Circulation: corridor width ≥ 900 mm
+-   R9 Circulation: corridor passing width ≥ 1200 mm
+-   R10 Circulation: continuous unobstructed path ≥ 900 mm
+-   R11 Circulation: minimum walkway width ≥ 750 mm
+-   R12 Circulation: preferred walkway width ≥ 900 mm
+-   R13 Circulation: major circulation path ≥ 1050 mm
+-   R14 Circulation: clearance around furniture ≥ 600 mm
+-   R15 Circulation: clearance behind seating ≥ 750 mm
+-   R16 Circulation: door swing clearance ≥ 750 mm
+-   R17 Circulation: entry zone clearance ≥ 1200 mm
+-   R18 Circulation: corridor width ≥ 900 mm
+-   R19 Circulation: corridor passing width ≥ 1200 mm
+-   R20 Circulation: continuous unobstructed path ≥ 900 mm
+-   R21 Circulation: minimum walkway width ≥ 750 mm
+-   R22 Circulation: preferred walkway width ≥ 900 mm
+-   R23 Circulation: major circulation path ≥ 1050 mm
+-   R24 Circulation: clearance around furniture ≥ 600 mm
+-   R25 Circulation: clearance behind seating ≥ 750 mm
+-   R26 Circulation: door swing clearance ≥ 750 mm
+-   R27 Circulation: entry zone clearance ≥ 1200 mm
+-   R28 Circulation: corridor width ≥ 900 mm
+-   R29 Circulation: corridor passing width ≥ 1200 mm
+-   R30 Circulation: continuous unobstructed path ≥ 900 mm
+-   R31 Circulation: minimum walkway width ≥ 750 mm
+-   R32 Circulation: preferred walkway width ≥ 900 mm
+-   R33 Circulation: major circulation path ≥ 1050 mm
+-   R34 Circulation: clearance around furniture ≥ 600 mm
+-   R35 Circulation: clearance behind seating ≥ 750 mm
+-   R36 Circulation: door swing clearance ≥ 750 mm
+-   R37 Circulation: entry zone clearance ≥ 1200 mm
+-   R38 Circulation: corridor width ≥ 900 mm
+-   R39 Circulation: corridor passing width ≥ 1200 mm
+-   R40 Circulation: continuous unobstructed path ≥ 900 mm
+-   R41 Circulation: minimum walkway width ≥ 750 mm
+-   R42 Circulation: preferred walkway width ≥ 900 mm
+-   R43 Circulation: major circulation path ≥ 1050 mm
+-   R44 Circulation: clearance around furniture ≥ 600 mm
+-   R45 Circulation: clearance behind seating ≥ 750 mm
+-   R46 Circulation: door swing clearance ≥ 750 mm
+-   R47 Circulation: entry zone clearance ≥ 1200 mm
+-   R48 Circulation: corridor width ≥ 900 mm
+-   R49 Circulation: corridor passing width ≥ 1200 mm
+-   R50 Circulation: continuous unobstructed path ≥ 900 mm
+-   R51 Circulation: minimum walkway width ≥ 750 mm
+-   R52 Circulation: preferred walkway width ≥ 900 mm
+-   R53 Circulation: major circulation path ≥ 1050 mm
+-   R54 Circulation: clearance around furniture ≥ 600 mm
+-   R55 Circulation: clearance behind seating ≥ 750 mm
+-   R56 Circulation: door swing clearance ≥ 750 mm
+-   R57 Circulation: entry zone clearance ≥ 1200 mm
+-   R58 Circulation: corridor width ≥ 900 mm
+-   R59 Circulation: corridor passing width ≥ 1200 mm
+-   R60 Circulation: continuous unobstructed path ≥ 900 mm
+-   R61 Circulation: minimum walkway width ≥ 750 mm
+-   R62 Circulation: preferred walkway width ≥ 900 mm
+-   R63 Circulation: major circulation path ≥ 1050 mm
+-   R64 Circulation: clearance around furniture ≥ 600 mm
+-   R65 Circulation: clearance behind seating ≥ 750 mm
+-   R66 Circulation: door swing clearance ≥ 750 mm
+-   R67 Circulation: entry zone clearance ≥ 1200 mm
+-   R68 Circulation: corridor width ≥ 900 mm
+-   R69 Circulation: corridor passing width ≥ 1200 mm
+-   R70 Circulation: continuous unobstructed path ≥ 900 mm
+-   R71 Circulation: minimum walkway width ≥ 750 mm
+-   R72 Circulation: preferred walkway width ≥ 900 mm
+-   R73 Circulation: major circulation path ≥ 1050 mm
+-   R74 Circulation: clearance around furniture ≥ 600 mm
+-   R75 Circulation: clearance behind seating ≥ 750 mm
+-   R76 Circulation: door swing clearance ≥ 750 mm
+-   R77 Circulation: entry zone clearance ≥ 1200 mm
+-   R78 Circulation: corridor width ≥ 900 mm
+-   R79 Circulation: corridor passing width ≥ 1200 mm
+-   R80 Circulation: continuous unobstructed path ≥ 900 mm
+-   R81 Circulation: minimum walkway width ≥ 750 mm
+-   R82 Circulation: preferred walkway width ≥ 900 mm
+-   R83 Circulation: major circulation path ≥ 1050 mm
+-   R84 Circulation: clearance around furniture ≥ 600 mm
+-   R85 Circulation: clearance behind seating ≥ 750 mm
+-   R86 Circulation: door swing clearance ≥ 750 mm
+-   R87 Circulation: entry zone clearance ≥ 1200 mm
+-   R88 Circulation: corridor width ≥ 900 mm
+-   R89 Circulation: corridor passing width ≥ 1200 mm
+-   R90 Circulation: continuous unobstructed path ≥ 900 mm
+-   R91 Circulation: minimum walkway width ≥ 750 mm
+-   R92 Circulation: preferred walkway width ≥ 900 mm
+-   R93 Circulation: major circulation path ≥ 1050 mm
+-   R94 Circulation: clearance around furniture ≥ 600 mm
+-   R95 Circulation: clearance behind seating ≥ 750 mm
+-   R96 Circulation: door swing clearance ≥ 750 mm
+-   R97 Circulation: entry zone clearance ≥ 1200 mm
+-   R98 Circulation: corridor width ≥ 900 mm
+-   R99 Circulation: corridor passing width ≥ 1200 mm
+-   R100 Circulation: continuous unobstructed path ≥ 900 mm
+-   R101 Circulation: minimum walkway width ≥ 750 mm
+-   R102 Circulation: preferred walkway width ≥ 900 mm
+-   R103 Circulation: major circulation path ≥ 1050 mm
+-   R104 Circulation: clearance around furniture ≥ 600 mm
+-   R105 Circulation: clearance behind seating ≥ 750 mm
+-   R106 Circulation: door swing clearance ≥ 750 mm
+-   R107 Circulation: entry zone clearance ≥ 1200 mm
+-   R108 Circulation: corridor width ≥ 900 mm
+-   R109 Circulation: corridor passing width ≥ 1200 mm
+-   R110 Circulation: continuous unobstructed path ≥ 900 mm
+-   R111 Circulation: minimum walkway width ≥ 750 mm
+-   R112 Circulation: preferred walkway width ≥ 900 mm
+-   R113 Circulation: major circulation path ≥ 1050 mm
+-   R114 Circulation: clearance around furniture ≥ 600 mm
+-   R115 Circulation: clearance behind seating ≥ 750 mm
+-   R116 Circulation: door swing clearance ≥ 750 mm
+-   R117 Circulation: entry zone clearance ≥ 1200 mm
+-   R118 Circulation: corridor width ≥ 900 mm
+-   R119 Circulation: corridor passing width ≥ 1200 mm
+-   R120 Circulation: continuous unobstructed path ≥ 900 mm
+
+------------------------------------------------------------------------
+
+# Seating Layout Rules (R121--R260)
+
+-   R121 Seating: sofa depth 850--1000 mm
+-   R122 Seating: sofa width 1800--2400 mm
+-   R123 Seating: sofa front clearance ≥ 450 mm
+-   R124 Seating: sofa rear clearance ≥ 750 mm
+-   R125 Seating: chair width 750--900 mm
+-   R126 Seating: chair depth 750--900 mm
+-   R127 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R128 Seating: seating cluster radius ≤ 3000 mm
+-   R129 Seating: primary seating faces focal element
+-   R130 Seating: recliner front clearance ≥ 900 mm
+-   R131 Seating: sofa depth 850--1000 mm
+-   R132 Seating: sofa width 1800--2400 mm
+-   R133 Seating: sofa front clearance ≥ 450 mm
+-   R134 Seating: sofa rear clearance ≥ 750 mm
+-   R135 Seating: chair width 750--900 mm
+-   R136 Seating: chair depth 750--900 mm
+-   R137 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R138 Seating: seating cluster radius ≤ 3000 mm
+-   R139 Seating: primary seating faces focal element
+-   R140 Seating: recliner front clearance ≥ 900 mm
+-   R141 Seating: sofa depth 850--1000 mm
+-   R142 Seating: sofa width 1800--2400 mm
+-   R143 Seating: sofa front clearance ≥ 450 mm
+-   R144 Seating: sofa rear clearance ≥ 750 mm
+-   R145 Seating: chair width 750--900 mm
+-   R146 Seating: chair depth 750--900 mm
+-   R147 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R148 Seating: seating cluster radius ≤ 3000 mm
+-   R149 Seating: primary seating faces focal element
+-   R150 Seating: recliner front clearance ≥ 900 mm
+-   R151 Seating: sofa depth 850--1000 mm
+-   R152 Seating: sofa width 1800--2400 mm
+-   R153 Seating: sofa front clearance ≥ 450 mm
+-   R154 Seating: sofa rear clearance ≥ 750 mm
+-   R155 Seating: chair width 750--900 mm
+-   R156 Seating: chair depth 750--900 mm
+-   R157 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R158 Seating: seating cluster radius ≤ 3000 mm
+-   R159 Seating: primary seating faces focal element
+-   R160 Seating: recliner front clearance ≥ 900 mm
+-   R161 Seating: sofa depth 850--1000 mm
+-   R162 Seating: sofa width 1800--2400 mm
+-   R163 Seating: sofa front clearance ≥ 450 mm
+-   R164 Seating: sofa rear clearance ≥ 750 mm
+-   R165 Seating: chair width 750--900 mm
+-   R166 Seating: chair depth 750--900 mm
+-   R167 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R168 Seating: seating cluster radius ≤ 3000 mm
+-   R169 Seating: primary seating faces focal element
+-   R170 Seating: recliner front clearance ≥ 900 mm
+-   R171 Seating: sofa depth 850--1000 mm
+-   R172 Seating: sofa width 1800--2400 mm
+-   R173 Seating: sofa front clearance ≥ 450 mm
+-   R174 Seating: sofa rear clearance ≥ 750 mm
+-   R175 Seating: chair width 750--900 mm
+-   R176 Seating: chair depth 750--900 mm
+-   R177 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R178 Seating: seating cluster radius ≤ 3000 mm
+-   R179 Seating: primary seating faces focal element
+-   R180 Seating: recliner front clearance ≥ 900 mm
+-   R181 Seating: sofa depth 850--1000 mm
+-   R182 Seating: sofa width 1800--2400 mm
+-   R183 Seating: sofa front clearance ≥ 450 mm
+-   R184 Seating: sofa rear clearance ≥ 750 mm
+-   R185 Seating: chair width 750--900 mm
+-   R186 Seating: chair depth 750--900 mm
+-   R187 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R188 Seating: seating cluster radius ≤ 3000 mm
+-   R189 Seating: primary seating faces focal element
+-   R190 Seating: recliner front clearance ≥ 900 mm
+-   R191 Seating: sofa depth 850--1000 mm
+-   R192 Seating: sofa width 1800--2400 mm
+-   R193 Seating: sofa front clearance ≥ 450 mm
+-   R194 Seating: sofa rear clearance ≥ 750 mm
+-   R195 Seating: chair width 750--900 mm
+-   R196 Seating: chair depth 750--900 mm
+-   R197 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R198 Seating: seating cluster radius ≤ 3000 mm
+-   R199 Seating: primary seating faces focal element
+-   R200 Seating: recliner front clearance ≥ 900 mm
+-   R201 Seating: sofa depth 850--1000 mm
+-   R202 Seating: sofa width 1800--2400 mm
+-   R203 Seating: sofa front clearance ≥ 450 mm
+-   R204 Seating: sofa rear clearance ≥ 750 mm
+-   R205 Seating: chair width 750--900 mm
+-   R206 Seating: chair depth 750--900 mm
+-   R207 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R208 Seating: seating cluster radius ≤ 3000 mm
+-   R209 Seating: primary seating faces focal element
+-   R210 Seating: recliner front clearance ≥ 900 mm
+-   R211 Seating: sofa depth 850--1000 mm
+-   R212 Seating: sofa width 1800--2400 mm
+-   R213 Seating: sofa front clearance ≥ 450 mm
+-   R214 Seating: sofa rear clearance ≥ 750 mm
+-   R215 Seating: chair width 750--900 mm
+-   R216 Seating: chair depth 750--900 mm
+-   R217 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R218 Seating: seating cluster radius ≤ 3000 mm
+-   R219 Seating: primary seating faces focal element
+-   R220 Seating: recliner front clearance ≥ 900 mm
+-   R221 Seating: sofa depth 850--1000 mm
+-   R222 Seating: sofa width 1800--2400 mm
+-   R223 Seating: sofa front clearance ≥ 450 mm
+-   R224 Seating: sofa rear clearance ≥ 750 mm
+-   R225 Seating: chair width 750--900 mm
+-   R226 Seating: chair depth 750--900 mm
+-   R227 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R228 Seating: seating cluster radius ≤ 3000 mm
+-   R229 Seating: primary seating faces focal element
+-   R230 Seating: recliner front clearance ≥ 900 mm
+-   R231 Seating: sofa depth 850--1000 mm
+-   R232 Seating: sofa width 1800--2400 mm
+-   R233 Seating: sofa front clearance ≥ 450 mm
+-   R234 Seating: sofa rear clearance ≥ 750 mm
+-   R235 Seating: chair width 750--900 mm
+-   R236 Seating: chair depth 750--900 mm
+-   R237 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R238 Seating: seating cluster radius ≤ 3000 mm
+-   R239 Seating: primary seating faces focal element
+-   R240 Seating: recliner front clearance ≥ 900 mm
+-   R241 Seating: sofa depth 850--1000 mm
+-   R242 Seating: sofa width 1800--2400 mm
+-   R243 Seating: sofa front clearance ≥ 450 mm
+-   R244 Seating: sofa rear clearance ≥ 750 mm
+-   R245 Seating: chair width 750--900 mm
+-   R246 Seating: chair depth 750--900 mm
+-   R247 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R248 Seating: seating cluster radius ≤ 3000 mm
+-   R249 Seating: primary seating faces focal element
+-   R250 Seating: recliner front clearance ≥ 900 mm
+-   R251 Seating: sofa depth 850--1000 mm
+-   R252 Seating: sofa width 1800--2400 mm
+-   R253 Seating: sofa front clearance ≥ 450 mm
+-   R254 Seating: sofa rear clearance ≥ 750 mm
+-   R255 Seating: chair width 750--900 mm
+-   R256 Seating: chair depth 750--900 mm
+-   R257 Seating: seat‑to‑seat conversation distance 1200--2400 mm
+-   R258 Seating: seating cluster radius ≤ 3000 mm
+-   R259 Seating: primary seating faces focal element
+-   R260 Seating: recliner front clearance ≥ 900 mm
+
+------------------------------------------------------------------------
+
+# Table Placement Rules (R261--R350)
+
+-   R261 Tables: coffee table distance to sofa 350--450 mm
+-   R262 Tables: coffee table height within ±25 mm of sofa seat
+-   R263 Tables: coffee table centered in seating group
+-   R264 Tables: coffee table width ≈ two‑thirds sofa length
+-   R265 Tables: side table within 300 mm of seat
+-   R266 Tables: side table height ≈ armrest height
+-   R267 Tables: console table depth ≤ 450 mm
+-   R268 Tables: console clearance behind sofa ≥ 750 mm
+-   R269 Tables: desk depth ≥ 600 mm
+-   R270 Tables: desk rear clearance ≥ 900 mm
+-   R271 Tables: coffee table distance to sofa 350--450 mm
+-   R272 Tables: coffee table height within ±25 mm of sofa seat
+-   R273 Tables: coffee table centered in seating group
+-   R274 Tables: coffee table width ≈ two‑thirds sofa length
+-   R275 Tables: side table within 300 mm of seat
+-   R276 Tables: side table height ≈ armrest height
+-   R277 Tables: console table depth ≤ 450 mm
+-   R278 Tables: console clearance behind sofa ≥ 750 mm
+-   R279 Tables: desk depth ≥ 600 mm
+-   R280 Tables: desk rear clearance ≥ 900 mm
+-   R281 Tables: coffee table distance to sofa 350--450 mm
+-   R282 Tables: coffee table height within ±25 mm of sofa seat
+-   R283 Tables: coffee table centered in seating group
+-   R284 Tables: coffee table width ≈ two‑thirds sofa length
+-   R285 Tables: side table within 300 mm of seat
+-   R286 Tables: side table height ≈ armrest height
+-   R287 Tables: console table depth ≤ 450 mm
+-   R288 Tables: console clearance behind sofa ≥ 750 mm
+-   R289 Tables: desk depth ≥ 600 mm
+-   R290 Tables: desk rear clearance ≥ 900 mm
+-   R291 Tables: coffee table distance to sofa 350--450 mm
+-   R292 Tables: coffee table height within ±25 mm of sofa seat
+-   R293 Tables: coffee table centered in seating group
+-   R294 Tables: coffee table width ≈ two‑thirds sofa length
+-   R295 Tables: side table within 300 mm of seat
+-   R296 Tables: side table height ≈ armrest height
+-   R297 Tables: console table depth ≤ 450 mm
+-   R298 Tables: console clearance behind sofa ≥ 750 mm
+-   R299 Tables: desk depth ≥ 600 mm
+-   R300 Tables: desk rear clearance ≥ 900 mm
+-   R301 Tables: coffee table distance to sofa 350--450 mm
+-   R302 Tables: coffee table height within ±25 mm of sofa seat
+-   R303 Tables: coffee table centered in seating group
+-   R304 Tables: coffee table width ≈ two‑thirds sofa length
+-   R305 Tables: side table within 300 mm of seat
+-   R306 Tables: side table height ≈ armrest height
+-   R307 Tables: console table depth ≤ 450 mm
+-   R308 Tables: console clearance behind sofa ≥ 750 mm
+-   R309 Tables: desk depth ≥ 600 mm
+-   R310 Tables: desk rear clearance ≥ 900 mm
+-   R311 Tables: coffee table distance to sofa 350--450 mm
+-   R312 Tables: coffee table height within ±25 mm of sofa seat
+-   R313 Tables: coffee table centered in seating group
+-   R314 Tables: coffee table width ≈ two‑thirds sofa length
+-   R315 Tables: side table within 300 mm of seat
+-   R316 Tables: side table height ≈ armrest height
+-   R317 Tables: console table depth ≤ 450 mm
+-   R318 Tables: console clearance behind sofa ≥ 750 mm
+-   R319 Tables: desk depth ≥ 600 mm
+-   R320 Tables: desk rear clearance ≥ 900 mm
+-   R321 Tables: coffee table distance to sofa 350--450 mm
+-   R322 Tables: coffee table height within ±25 mm of sofa seat
+-   R323 Tables: coffee table centered in seating group
+-   R324 Tables: coffee table width ≈ two‑thirds sofa length
+-   R325 Tables: side table within 300 mm of seat
+-   R326 Tables: side table height ≈ armrest height
+-   R327 Tables: console table depth ≤ 450 mm
+-   R328 Tables: console clearance behind sofa ≥ 750 mm
+-   R329 Tables: desk depth ≥ 600 mm
+-   R330 Tables: desk rear clearance ≥ 900 mm
+-   R331 Tables: coffee table distance to sofa 350--450 mm
+-   R332 Tables: coffee table height within ±25 mm of sofa seat
+-   R333 Tables: coffee table centered in seating group
+-   R334 Tables: coffee table width ≈ two‑thirds sofa length
+-   R335 Tables: side table within 300 mm of seat
+-   R336 Tables: side table height ≈ armrest height
+-   R337 Tables: console table depth ≤ 450 mm
+-   R338 Tables: console clearance behind sofa ≥ 750 mm
+-   R339 Tables: desk depth ≥ 600 mm
+-   R340 Tables: desk rear clearance ≥ 900 mm
+-   R341 Tables: coffee table distance to sofa 350--450 mm
+-   R342 Tables: coffee table height within ±25 mm of sofa seat
+-   R343 Tables: coffee table centered in seating group
+-   R344 Tables: coffee table width ≈ two‑thirds sofa length
+-   R345 Tables: side table within 300 mm of seat
+-   R346 Tables: side table height ≈ armrest height
+-   R347 Tables: console table depth ≤ 450 mm
+-   R348 Tables: console clearance behind sofa ≥ 750 mm
+-   R349 Tables: desk depth ≥ 600 mm
+-   R350 Tables: desk rear clearance ≥ 900 mm
+
+------------------------------------------------------------------------
+
+# Bedroom Rules (R351--R450)
+
+-   R351 Bedroom: bed side clearance ≥ 600 mm
+-   R352 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R353 Bedroom: bed foot clearance ≥ 750 mm
+-   R354 Bedroom: nightstand height ≈ mattress height
+-   R355 Bedroom: nightstand width 400--600 mm
+-   R356 Bedroom: wardrobe depth ≥ 600 mm
+-   R357 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R358 Bedroom: dresser depth 450--600 mm
+-   R359 Bedroom: dresser clearance ≥ 900 mm
+-   R360 Bedroom: bed headboard placed against wall
+-   R361 Bedroom: bed side clearance ≥ 600 mm
+-   R362 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R363 Bedroom: bed foot clearance ≥ 750 mm
+-   R364 Bedroom: nightstand height ≈ mattress height
+-   R365 Bedroom: nightstand width 400--600 mm
+-   R366 Bedroom: wardrobe depth ≥ 600 mm
+-   R367 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R368 Bedroom: dresser depth 450--600 mm
+-   R369 Bedroom: dresser clearance ≥ 900 mm
+-   R370 Bedroom: bed headboard placed against wall
+-   R371 Bedroom: bed side clearance ≥ 600 mm
+-   R372 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R373 Bedroom: bed foot clearance ≥ 750 mm
+-   R374 Bedroom: nightstand height ≈ mattress height
+-   R375 Bedroom: nightstand width 400--600 mm
+-   R376 Bedroom: wardrobe depth ≥ 600 mm
+-   R377 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R378 Bedroom: dresser depth 450--600 mm
+-   R379 Bedroom: dresser clearance ≥ 900 mm
+-   R380 Bedroom: bed headboard placed against wall
+-   R381 Bedroom: bed side clearance ≥ 600 mm
+-   R382 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R383 Bedroom: bed foot clearance ≥ 750 mm
+-   R384 Bedroom: nightstand height ≈ mattress height
+-   R385 Bedroom: nightstand width 400--600 mm
+-   R386 Bedroom: wardrobe depth ≥ 600 mm
+-   R387 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R388 Bedroom: dresser depth 450--600 mm
+-   R389 Bedroom: dresser clearance ≥ 900 mm
+-   R390 Bedroom: bed headboard placed against wall
+-   R391 Bedroom: bed side clearance ≥ 600 mm
+-   R392 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R393 Bedroom: bed foot clearance ≥ 750 mm
+-   R394 Bedroom: nightstand height ≈ mattress height
+-   R395 Bedroom: nightstand width 400--600 mm
+-   R396 Bedroom: wardrobe depth ≥ 600 mm
+-   R397 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R398 Bedroom: dresser depth 450--600 mm
+-   R399 Bedroom: dresser clearance ≥ 900 mm
+-   R400 Bedroom: bed headboard placed against wall
+-   R401 Bedroom: bed side clearance ≥ 600 mm
+-   R402 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R403 Bedroom: bed foot clearance ≥ 750 mm
+-   R404 Bedroom: nightstand height ≈ mattress height
+-   R405 Bedroom: nightstand width 400--600 mm
+-   R406 Bedroom: wardrobe depth ≥ 600 mm
+-   R407 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R408 Bedroom: dresser depth 450--600 mm
+-   R409 Bedroom: dresser clearance ≥ 900 mm
+-   R410 Bedroom: bed headboard placed against wall
+-   R411 Bedroom: bed side clearance ≥ 600 mm
+-   R412 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R413 Bedroom: bed foot clearance ≥ 750 mm
+-   R414 Bedroom: nightstand height ≈ mattress height
+-   R415 Bedroom: nightstand width 400--600 mm
+-   R416 Bedroom: wardrobe depth ≥ 600 mm
+-   R417 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R418 Bedroom: dresser depth 450--600 mm
+-   R419 Bedroom: dresser clearance ≥ 900 mm
+-   R420 Bedroom: bed headboard placed against wall
+-   R421 Bedroom: bed side clearance ≥ 600 mm
+-   R422 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R423 Bedroom: bed foot clearance ≥ 750 mm
+-   R424 Bedroom: nightstand height ≈ mattress height
+-   R425 Bedroom: nightstand width 400--600 mm
+-   R426 Bedroom: wardrobe depth ≥ 600 mm
+-   R427 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R428 Bedroom: dresser depth 450--600 mm
+-   R429 Bedroom: dresser clearance ≥ 900 mm
+-   R430 Bedroom: bed headboard placed against wall
+-   R431 Bedroom: bed side clearance ≥ 600 mm
+-   R432 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R433 Bedroom: bed foot clearance ≥ 750 mm
+-   R434 Bedroom: nightstand height ≈ mattress height
+-   R435 Bedroom: nightstand width 400--600 mm
+-   R436 Bedroom: wardrobe depth ≥ 600 mm
+-   R437 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R438 Bedroom: dresser depth 450--600 mm
+-   R439 Bedroom: dresser clearance ≥ 900 mm
+-   R440 Bedroom: bed headboard placed against wall
+-   R441 Bedroom: bed side clearance ≥ 600 mm
+-   R442 Bedroom: preferred bed side clearance ≥ 750 mm
+-   R443 Bedroom: bed foot clearance ≥ 750 mm
+-   R444 Bedroom: nightstand height ≈ mattress height
+-   R445 Bedroom: nightstand width 400--600 mm
+-   R446 Bedroom: wardrobe depth ≥ 600 mm
+-   R447 Bedroom: wardrobe front clearance ≥ 900 mm
+-   R448 Bedroom: dresser depth 450--600 mm
+-   R449 Bedroom: dresser clearance ≥ 900 mm
+-   R450 Bedroom: bed headboard placed against wall
+
+------------------------------------------------------------------------
+
+# Dining Rules (R451--R510)
+
+-   R451 Dining: dining table height 720--760 mm
+-   R452 Dining: dining chair seat height 430--480 mm
+-   R453 Dining: dining seat width ≥ 600 mm
+-   R454 Dining: seat depth ≥ 400 mm
+-   R455 Dining: clearance behind dining chair ≥ 900 mm
+-   R456 Dining: walkway behind dining chair ≥ 1050 mm
+-   R457 Dining: table centered in dining area
+-   R458 Dining: chandelier centered above table
+-   R459 Dining: buffet depth ≤ 500 mm
+-   R460 Dining: buffet clearance ≥ 900 mm
+-   R461 Dining: dining table height 720--760 mm
+-   R462 Dining: dining chair seat height 430--480 mm
+-   R463 Dining: dining seat width ≥ 600 mm
+-   R464 Dining: seat depth ≥ 400 mm
+-   R465 Dining: clearance behind dining chair ≥ 900 mm
+-   R466 Dining: walkway behind dining chair ≥ 1050 mm
+-   R467 Dining: table centered in dining area
+-   R468 Dining: chandelier centered above table
+-   R469 Dining: buffet depth ≤ 500 mm
+-   R470 Dining: buffet clearance ≥ 900 mm
+-   R471 Dining: dining table height 720--760 mm
+-   R472 Dining: dining chair seat height 430--480 mm
+-   R473 Dining: dining seat width ≥ 600 mm
+-   R474 Dining: seat depth ≥ 400 mm
+-   R475 Dining: clearance behind dining chair ≥ 900 mm
+-   R476 Dining: walkway behind dining chair ≥ 1050 mm
+-   R477 Dining: table centered in dining area
+-   R478 Dining: chandelier centered above table
+-   R479 Dining: buffet depth ≤ 500 mm
+-   R480 Dining: buffet clearance ≥ 900 mm
+-   R481 Dining: dining table height 720--760 mm
+-   R482 Dining: dining chair seat height 430--480 mm
+-   R483 Dining: dining seat width ≥ 600 mm
+-   R484 Dining: seat depth ≥ 400 mm
+-   R485 Dining: clearance behind dining chair ≥ 900 mm
+-   R486 Dining: walkway behind dining chair ≥ 1050 mm
+-   R487 Dining: table centered in dining area
+-   R488 Dining: chandelier centered above table
+-   R489 Dining: buffet depth ≤ 500 mm
+-   R490 Dining: buffet clearance ≥ 900 mm
+-   R491 Dining: dining table height 720--760 mm
+-   R492 Dining: dining chair seat height 430--480 mm
+-   R493 Dining: dining seat width ≥ 600 mm
+-   R494 Dining: seat depth ≥ 400 mm
+-   R495 Dining: clearance behind dining chair ≥ 900 mm
+-   R496 Dining: walkway behind dining chair ≥ 1050 mm
+-   R497 Dining: table centered in dining area
+-   R498 Dining: chandelier centered above table
+-   R499 Dining: buffet depth ≤ 500 mm
+-   R500 Dining: buffet clearance ≥ 900 mm
+-   R501 Dining: dining table height 720--760 mm
+-   R502 Dining: dining chair seat height 430--480 mm
+-   R503 Dining: dining seat width ≥ 600 mm
+-   R504 Dining: seat depth ≥ 400 mm
+-   R505 Dining: clearance behind dining chair ≥ 900 mm
+-   R506 Dining: walkway behind dining chair ≥ 1050 mm
+-   R507 Dining: table centered in dining area
+-   R508 Dining: chandelier centered above table
+-   R509 Dining: buffet depth ≤ 500 mm
+-   R510 Dining: buffet clearance ≥ 900 mm
+
+------------------------------------------------------------------------
+
+# Kitchen Rules (R511--R580)
+
+-   R511 Kitchen: sink‑stove distance 1200--2700 mm
+-   R512 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R513 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R514 Kitchen: counter height ≈ 900 mm
+-   R515 Kitchen: counter depth ≈ 600 mm
+-   R516 Kitchen: island clearance ≥ 900 mm
+-   R517 Kitchen: preferred island clearance ≥ 1050 mm
+-   R518 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R519 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R520 Kitchen: upper cabinets 500--600 mm above counter
+-   R521 Kitchen: sink‑stove distance 1200--2700 mm
+-   R522 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R523 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R524 Kitchen: counter height ≈ 900 mm
+-   R525 Kitchen: counter depth ≈ 600 mm
+-   R526 Kitchen: island clearance ≥ 900 mm
+-   R527 Kitchen: preferred island clearance ≥ 1050 mm
+-   R528 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R529 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R530 Kitchen: upper cabinets 500--600 mm above counter
+-   R531 Kitchen: sink‑stove distance 1200--2700 mm
+-   R532 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R533 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R534 Kitchen: counter height ≈ 900 mm
+-   R535 Kitchen: counter depth ≈ 600 mm
+-   R536 Kitchen: island clearance ≥ 900 mm
+-   R537 Kitchen: preferred island clearance ≥ 1050 mm
+-   R538 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R539 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R540 Kitchen: upper cabinets 500--600 mm above counter
+-   R541 Kitchen: sink‑stove distance 1200--2700 mm
+-   R542 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R543 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R544 Kitchen: counter height ≈ 900 mm
+-   R545 Kitchen: counter depth ≈ 600 mm
+-   R546 Kitchen: island clearance ≥ 900 mm
+-   R547 Kitchen: preferred island clearance ≥ 1050 mm
+-   R548 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R549 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R550 Kitchen: upper cabinets 500--600 mm above counter
+-   R551 Kitchen: sink‑stove distance 1200--2700 mm
+-   R552 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R553 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R554 Kitchen: counter height ≈ 900 mm
+-   R555 Kitchen: counter depth ≈ 600 mm
+-   R556 Kitchen: island clearance ≥ 900 mm
+-   R557 Kitchen: preferred island clearance ≥ 1050 mm
+-   R558 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R559 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R560 Kitchen: upper cabinets 500--600 mm above counter
+-   R561 Kitchen: sink‑stove distance 1200--2700 mm
+-   R562 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R563 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R564 Kitchen: counter height ≈ 900 mm
+-   R565 Kitchen: counter depth ≈ 600 mm
+-   R566 Kitchen: island clearance ≥ 900 mm
+-   R567 Kitchen: preferred island clearance ≥ 1050 mm
+-   R568 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R569 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R570 Kitchen: upper cabinets 500--600 mm above counter
+-   R571 Kitchen: sink‑stove distance 1200--2700 mm
+-   R572 Kitchen: sink‑fridge distance 1200--2700 mm
+-   R573 Kitchen: fridge‑stove distance 1200--2700 mm
+-   R574 Kitchen: counter height ≈ 900 mm
+-   R575 Kitchen: counter depth ≈ 600 mm
+-   R576 Kitchen: island clearance ≥ 900 mm
+-   R577 Kitchen: preferred island clearance ≥ 1050 mm
+-   R578 Kitchen: refrigerator opening clearance ≥ 900 mm
+-   R579 Kitchen: dishwasher opening clearance ≥ 900 mm
+-   R580 Kitchen: upper cabinets 500--600 mm above counter
+
+------------------------------------------------------------------------
+
+# Bathroom Rules (R581--R620)
+
+-   R581 Bathroom: toilet width zone ≥ 750 mm
+-   R582 Bathroom: toilet front clearance ≥ 600 mm
+-   R583 Bathroom: preferred toilet clearance ≥ 750 mm
+-   R584 Bathroom: sink height ≈ 850 mm
+-   R585 Bathroom: sink front clearance ≥ 750 mm
+-   R586 Bathroom: shower minimum size 900×900 mm
+-   R587 Bathroom: shower comfortable size 1000×1000 mm
+-   R588 Bathroom: bathtub length ≥ 1500 mm
+-   R589 Bathroom: bathtub front clearance ≥ 750 mm
+-   R590 Bathroom: mirror center at eye level
+-   R591 Bathroom: toilet width zone ≥ 750 mm
+-   R592 Bathroom: toilet front clearance ≥ 600 mm
+-   R593 Bathroom: preferred toilet clearance ≥ 750 mm
+-   R594 Bathroom: sink height ≈ 850 mm
+-   R595 Bathroom: sink front clearance ≥ 750 mm
+-   R596 Bathroom: shower minimum size 900×900 mm
+-   R597 Bathroom: shower comfortable size 1000×1000 mm
+-   R598 Bathroom: bathtub length ≥ 1500 mm
+-   R599 Bathroom: bathtub front clearance ≥ 750 mm
+-   R600 Bathroom: mirror center at eye level
+-   R601 Bathroom: toilet width zone ≥ 750 mm
+-   R602 Bathroom: toilet front clearance ≥ 600 mm
+-   R603 Bathroom: preferred toilet clearance ≥ 750 mm
+-   R604 Bathroom: sink height ≈ 850 mm
+-   R605 Bathroom: sink front clearance ≥ 750 mm
+-   R606 Bathroom: shower minimum size 900×900 mm
+-   R607 Bathroom: shower comfortable size 1000×1000 mm
+-   R608 Bathroom: bathtub length ≥ 1500 mm
+-   R609 Bathroom: bathtub front clearance ≥ 750 mm
+-   R610 Bathroom: mirror center at eye level
+-   R611 Bathroom: toilet width zone ≥ 750 mm
+-   R612 Bathroom: toilet front clearance ≥ 600 mm
+-   R613 Bathroom: preferred toilet clearance ≥ 750 mm
+-   R614 Bathroom: sink height ≈ 850 mm
+-   R615 Bathroom: sink front clearance ≥ 750 mm
+-   R616 Bathroom: shower minimum size 900×900 mm
+-   R617 Bathroom: shower comfortable size 1000×1000 mm
+-   R618 Bathroom: bathtub length ≥ 1500 mm
+-   R619 Bathroom: bathtub front clearance ≥ 750 mm
+-   R620 Bathroom: mirror center at eye level

@@ -37,6 +37,7 @@ def index():
 
 
 @router.get("/dpp")
+@router.get("/dpp.html")
 def dpp_page():
     """Serve the Design Personality Profile page."""
     return FileResponse(str(ROOT / "frontend" / "dpp.html"))
