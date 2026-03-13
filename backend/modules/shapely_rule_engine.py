@@ -104,7 +104,10 @@ def geometries_to_layout(geometries: dict[str, Polygon]) -> dict[str, Any]:
 
 
 def _distance_mm(poly_a: Polygon, poly_b: Polygon) -> float:
-    """Distance between two polygons in same units as input (assumed mm)."""
+    """
+    Edge-to-edge distance between two polygons (minimum distance between their boundaries).
+    Same units as input (assumed mm). Not center-to-center; this is the clearance gap.
+    """
     return float(poly_a.distance(poly_b))
 
 
@@ -127,6 +130,7 @@ def get_shapely_geometry_output(geometries: dict[str, Polygon]) -> dict[str, Any
                 "a": a,
                 "b": b,
                 "distance_mm": round(d, 2),
+                "distance_type": "edge_to_edge",
                 "intersects": bool(poly_a.intersects(poly_b)),
             })
 
@@ -144,6 +148,7 @@ def get_shapely_geometry_output(geometries: dict[str, Polygon]) -> dict[str, Any
     return {
         "object_pairs": object_pairs,
         "object_to_room": object_to_room,
+        "distance_note": "distance_mm is minimum edge-to-edge (boundary) clearance, not center-to-center.",
     }
 
 
@@ -161,6 +166,17 @@ def evaluate_rules(geometries: dict[str, Polygon], rules: list[dict[str, Any]] |
     room = geometries.get(ROOM_KEY)
     furniture = {k: v for k, v in geometries.items() if k != ROOM_KEY}
     names = list(furniture.keys())
+
+    # Pairs that have a proximity_range rule (e.g. coffee table–sofa 350–450 mm): skip min_clearance for them
+    pairs_with_proximity_range: set[frozenset[str]] = set()
+    for r in all_rules:
+        if r.get("type") == "proximity_range" and r.get("object_a") and r.get("object_b"):
+            oa = (r.get("object_a") or "").strip().lower().replace(" ", "_").replace("-", "_")
+            ob = (r.get("object_b") or "").strip().lower().replace(" ", "_").replace("-", "_")
+            pairs_with_proximity_range.add(frozenset([oa, ob]))
+
+    def _norm(s: str) -> str:
+        return s.strip().lower().replace(" ", "_").replace("-", "_")
 
     for rule in all_rules:
         rid = rule.get("rule_id") or ""
@@ -188,6 +204,8 @@ def evaluate_rules(geometries: dict[str, Polygon], rules: list[dict[str, Any]] |
             for i in range(len(names)):
                 for j in range(i + 1, len(names)):
                     a, b = names[i], names[j]
+                    if frozenset([_norm(a), _norm(b)]) in pairs_with_proximity_range:
+                        continue  # this pair has a proximity_range (e.g. 350–450 mm); don't require 600 mm
                     d = _distance_mm(furniture[a], furniture[b])
                     if d < min_mm:
                         v = {

@@ -1,9 +1,10 @@
 """
 Shapely Layout Demo — API routes.
 
-Accepts JSON upload (OpenCV-style layout with object coordinates and room boundary),
-validates against markdown-defined rules using Shapely, returns raw violations
-and human-readable explanations.
+Accepts JSON upload in either format:
+  - Canonical: { "room": [[x,y],...], "objects": [ { "name", "coords": [[x,y],...] } ] } (coordinates in mm)
+  - CoreModel: { "floors", "objects", "walls" } with "transform" (4x4) and "dimensions" (m) per item; "category" on objects.
+CoreModel input is converted to canonical (metres → mm, transform+dimensions → polygon coords) before validation.
 """
 
 import json
@@ -14,8 +15,10 @@ from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 
 from modules.shapely_blueprint import layout_to_blueprint_png
+from modules.shapely_layout_adapter import normalize_layout_for_shapely
 from modules.shapely_nudge import nudge_overlaps, space_evaluation
 from modules.shapely_rule_engine import evaluate_rules, geometries_to_layout, get_shapely_geometry_output, layout_json_to_geometries
+from modules.shapely_rule_parser import parse_rules_file
 from modules.shapely_response_formatter import RESPONSE_GUIDE, format_response, _build_summary
 
 logger = logging.getLogger(__name__)
@@ -26,9 +29,11 @@ EXAMPLE_LAYOUT_PATH = Path(__file__).resolve().parent.parent / "data" / "shapely
 
 
 @router.post("/validate-layout")
-async def validate_layout(file: UploadFile = File(..., description="JSON file with OpenCV object detection coordinates")):
+async def validate_layout(file: UploadFile = File(..., description="JSON file: canonical layout (room+objects with coords) or coreModel (floors/objects with transform+dimensions)")):
     """
-    Upload a JSON file containing layout data (objects + room boundary with coordinates).
+    Upload a JSON file containing layout data. Supports:
+    - Canonical: room (polygon coords in mm) + objects with name and coords.
+    - CoreModel: floors, objects (with category, dimensions, transform in metres); converted automatically.
     Returns validation result with raw violations and human-readable explanations.
     """
     if not file.filename or not file.filename.lower().endswith(".json"):
@@ -42,6 +47,9 @@ async def validate_layout(file: UploadFile = File(..., description="JSON file wi
     except Exception as e:
         raise HTTPException(400, str(e))
 
+    # Accept coreModel format (floors/objects with transform+dimensions); convert to canonical (room + objects with coords)
+    layout = normalize_layout_for_shapely(layout)
+
     try:
         geometries = layout_json_to_geometries(layout)
     except Exception as e:
@@ -51,8 +59,9 @@ async def validate_layout(file: UploadFile = File(..., description="JSON file wi
     if not geometries:
         raise HTTPException(422, "No valid objects or room boundary found in the JSON.")
 
-    # 1. Nudge overlapping objects apart (constrained by room walls)
-    geometries_nudged, nudge_reports = nudge_overlaps(geometries)
+    # 1. Nudge overlapping objects apart (constrained by room walls); gap per pair from rules (min_clearance / proximity_range)
+    rules = parse_rules_file()
+    geometries_nudged, nudge_reports = nudge_overlaps(geometries, rules=rules)
     nudge_errors = [r for r in nudge_reports if not r.get("success")]
 
     # 2. Evaluate rules on the (nudged) layout
@@ -92,13 +101,14 @@ async def get_example_layout():
 @router.post("/blueprint")
 async def get_blueprint(request: Request):
     """
-    Generate a blueprint diagram from layout JSON (room + objects with coordinates).
-    Accepts JSON body; returns PNG image. Use after uploading a layout file.
+    Generate a blueprint diagram from layout JSON. Accepts canonical or coreModel format (same as validate-layout).
+    JSON body; returns PNG image.
     """
     try:
         layout = await request.json()
     except Exception as e:
         raise HTTPException(400, f"Invalid JSON body: {e}")
+    layout = normalize_layout_for_shapely(layout)
     try:
         png_bytes = layout_to_blueprint_png(layout)
     except ValueError as e:

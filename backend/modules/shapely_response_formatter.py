@@ -25,6 +25,9 @@ def format_violation_explanation(v: dict[str, Any]) -> str:
         a = objs[0] if objs else "object"
         b = objs[1] if len(objs) > 1 else "room boundary"
         dist_str = f"{int(round(dist))} mm" if dist is not None else "0 mm"
+        # Use neutral wording when one object is room_boundary (e.g. TV, equipment), not "clearance around furniture"
+        if objs and "room_boundary" in objs:
+            suffix = f" (Rule from document: minimum clearance from room boundary ≥ {min_req} mm)"
         return (
             f"Minimum clearance between {a.replace('_', ' ')} and {b.replace('_', ' ')} is not met. "
             f"Current distance is {dist_str} but minimum required clearance is {min_req} mm." + suffix
@@ -53,15 +56,18 @@ def format_violation_explanation(v: dict[str, Any]) -> str:
 
 
 def format_nudge_report(r: dict[str, Any]) -> str:
-    """Human-readable line for a single nudge report."""
+    """Human-readable line for a single nudge report. Uses achieved_gap_mm when present (actual clearance), else distance_mm (displacement)."""
     objs = r.get("objects", [])
     a, b = (objs[0], objs[1]) if len(objs) >= 2 else (objs[0], "other")
     nudged = r.get("nudged") or "object"
     if r.get("success"):
-        # "Away from" = the other object in the pair (the one that was not nudged)
+        # Prefer achieved_gap_mm (actual edge-to-edge gap) so text matches reality; fallback to distance_mm (displacement)
+        dist = r.get("achieved_gap_mm") if r.get("achieved_gap_mm") is not None else r.get("distance_mm")
+        dist_str = f"{int(round(dist))}" if dist is not None else "—"
+        if nudged == "both":
+            return f"Moved {a.replace('_', ' ')} and {b.replace('_', ' ')} apart by {dist_str} mm (both nudged) to resolve overlap."
         other = b if nudged == a else (a if nudged == b else b)
-        dist = r.get("distance_mm")
-        return f"Nudged {nudged.replace('_', ' ')} away from {other.replace('_', ' ')} by {int(dist)} mm to resolve overlap (within room)."
+        return f"Nudged {str(nudged).replace('_', ' ')} away from {other.replace('_', ' ')} by {dist_str} mm to resolve overlap (within room)."
     return f"Could not nudge {a.replace('_', ' ')} and {b.replace('_', ' ')} apart: {r.get('reason', 'nudge would place object outside room')}"
 
 
@@ -128,7 +134,7 @@ RESPONSE_GUIDE = {
     "nudge_error_explanations": "Human-readable lines for each failed nudge (why it could not be fixed).",
     "space_evaluation": "For each violation: how far the object can be moved to fix it before hitting wall or another object.",
     "objects_found": "List of object names detected in the layout (including 'room' for the boundary).",
-    "shapely_geometry": "Raw Shapely outputs for the uploaded layout (before nudge): object_pairs (distance_mm, intersects) and object_to_room (distance_to_boundary_mm, within_room). Overlaps show intersects: true here; rule validation runs on the layout after nudge.",
+    "shapely_geometry": "Raw Shapely outputs for the uploaded layout (before nudge): object_pairs (distance_mm = edge-to-edge clearance between boundaries, not center-to-center; distance_type; intersects) and object_to_room. Rule validation runs on the layout after nudge. Nudge direction uses nearest points on boundaries so movement increases the actual gap.",
     "layout_after_nudge": "Updated room and object coordinates after any nudging (use this as the corrected layout).",
     "response_guide": "This object: explains what each key in the response means.",
 }
