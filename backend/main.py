@@ -88,7 +88,7 @@ def create_app() -> FastAPI:
     # handles the missing DB gracefully (returns empty list / friendly error)
     # instead of blocking with a 503.
     _SKIP_DB = ("/", "/auth", "/profile", "/ai", "/health", "/.well-known",
-                "/generate-3d", "/proxy-glb", "/scale-3d", "/3d-dimensions", "/dpp", "/docs", "/redoc",
+                "/generate-3d", "/proxy-glb", "/scale-3d", "/3d-dimensions", "/dpp", "/dpp.html", "/docs", "/redoc",
                 "/openapi.json", "/api/files", "/shapely")
 
     @app.middleware("http")
