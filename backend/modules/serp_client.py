@@ -813,13 +813,11 @@ def fetch_and_prepare_serp(
         local_paths = download_serp_one_per_result(
             image_id, result_url_pairs, max_images=1
         )
-        if not local_paths:
-            return []
-
+        # Still save to Neo4j even when download failed (metadata + image_url); many hosts block direct fetch
         norm = {
             "asin": image_id,
             "title": (first_norm.get("title") or query).strip(),
-            "image_url": first_norm["image_url"],
+            "image_url": first_norm.get("image_url") or (result_url_pairs[0][0] if result_url_pairs else ""),
             "source_url": first_norm.get("source_url", ""),
             "source_domain": first_norm.get("source_domain", ""),
             "query": query,
@@ -830,7 +828,7 @@ def fetch_and_prepare_serp(
             "width": first_norm.get("width"),
             "height": first_norm.get("height"),
             "image_paths": local_paths,
-            "image_path_used": local_paths[0],
+            "image_path_used": local_paths[0] if local_paths else None,
             "raw": first_norm.get("raw"),
         }
         # Scrape source URL (actual product page) for product_dimensions, material, and multiple product images (max 12s wait)
@@ -857,18 +855,21 @@ def fetch_and_prepare_serp(
                         norm["image_paths"] = local_paths
             except Exception:
                 pass
-        if norm.get("width") is None or norm.get("height") is None:
+        if (norm.get("width") is None or norm.get("height") is None) and local_paths:
             try:
-                from image_utils import get_image_dimensions
+                from modules.image_utils import get_image_dimensions
                 w, h = get_image_dimensions(local_paths[0])
                 if w and h:
                     norm["width"], norm["height"] = w, h
             except Exception:
                 pass
-        try:
-            from image_utils import get_image_base64
-            norm["image_base64"] = get_image_base64(local_paths[0])
-        except Exception:
+        if local_paths:
+            try:
+                from modules.image_utils import get_image_base64
+                norm["image_base64"] = get_image_base64(local_paths[0])
+            except Exception:
+                norm["image_base64"] = None
+        else:
             norm["image_base64"] = None
         return [norm]
 
@@ -913,7 +914,7 @@ def fetch_and_prepare_serp(
 
         if (norm.get("width") is None or norm.get("height") is None) and local_paths:
             try:
-                from image_utils import get_image_dimensions
+                from modules.image_utils import get_image_dimensions
                 w, h = get_image_dimensions(local_paths[0])
                 if w and h:
                     norm["width"], norm["height"] = w, h
@@ -921,7 +922,7 @@ def fetch_and_prepare_serp(
                 pass
 
         try:
-            from image_utils import get_image_base64
+            from modules.image_utils import get_image_base64
             norm["image_base64"] = get_image_base64(local_paths[0]) if local_paths else None
         except Exception:
             norm["image_base64"] = None

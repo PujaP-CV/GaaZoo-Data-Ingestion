@@ -720,7 +720,7 @@ async def analyse_spotify(request: Request):
                 playlist_names = [id_to_name.get(pid, f"Playlist {pid}") for pid in playlist_ids]
             result, live_error = build_user_summary_from_live(token, playlist_ids, playlist_names)
             if live_error:
-                return jsonify({"error": live_error}), 403 if "Forbidden" in live_error else 400
+                return JSONResponse({"error": live_error}, status_code=403 if "Forbidden" in live_error else 400)
             if result:
                 top_artists, top_tracks, top_genres, audio_features_str, top_genres_list = result
                 try:
